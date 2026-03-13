@@ -248,11 +248,103 @@ const AE_COL = {
 let DATA = [];
 let CONTACTED = {};
 
-// Storage helpers
-const store = {
-  async get(k){try{const r=await window.storage.get(k);return r&&r.value?JSON.parse(r.value):null}catch(e){return null}},
-  async set(k,v){try{await window.storage.set(k,JSON.stringify(v))}catch(e){}}
+// Firebase Firestore sync
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyANaetefY__WyBsgWtBut_s8nTOrceYnmY",
+  authDomain: "remax-panel.firebaseapp.com",
+  projectId: "remax-panel",
+  storageBucket: "remax-panel.firebasestorage.app",
+  messagingSenderId: "999825797226",
+  appId: "1:999825797226:web:47f8ceda3d4aafc09fda13"
 };
+
+let _db = null;
+let _localWrite = false; // flag para no re-aplicar cambios propios
+
+async function getDB() {
+  if (_db) return _db;
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js');
+  const { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+  const app = initializeApp(FIREBASE_CONFIG);
+  _db = { fs: getFirestore(app), doc, getDoc, setDoc, onSnapshot, collection };
+  return _db;
+}
+
+const store = {
+  async get(k) {
+    try {
+      const db = await getDB();
+      const ref = db.doc(db.fs, 'panel', k);
+      const snap = await db.getDoc(ref);
+      return snap.exists() ? snap.data().value : null;
+    } catch(e) { console.warn('Firestore get error', e); return null; }
+  },
+  async set(k, v) {
+    try {
+      const db = await getDB();
+      const ref = db.doc(db.fs, 'panel', k);
+      _localWrite = true;
+      await db.setDoc(ref, { value: v });
+      setTimeout(()=>{ _localWrite = false; }, 1000);
+    } catch(e) { console.warn('Firestore set error', e); }
+  }
+};
+
+function applyRemoteUpdate(k, v) {
+  if (_localWrite) return; // ignorar eco de cambios propios
+  if (k === 'remax_data_v2' && v && v.length) {
+    DATA = v;
+    updateSidebarCount();
+    populateSelects();
+    // re-render página activa
+    const ae = document.getElementById('sel-locales').value;
+    if (ae) renderLocales(ae);
+    const aeb = document.getElementById('sel-brokers').value;
+    if (aeb) renderBrokers(aeb);
+    if (document.getElementById('page-ae').classList.contains('active')) renderAE();
+    if (document.getElementById('page-resumen').classList.contains('active')) renderResumen();
+    if (document.getElementById('page-admin').classList.contains('active')) renderAdmin();
+    showSyncToast('🔄 Datos actualizados por otro usuario');
+  }
+  if (k === 'remax_contacted' && v) {
+    CONTACTED = v;
+    const ae = document.getElementById('sel-locales').value;
+    if (ae) renderLocales(ae);
+    if (document.getElementById('page-ae').classList.contains('active')) renderAE();
+    if (document.getElementById('page-resumen').classList.contains('active')) renderResumen();
+    showSyncToast('✅ Contactos sincronizados');
+  }
+}
+
+function showSyncToast(msg) {
+  let t = document.getElementById('sync-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'sync-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1A1A1A;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+async function startRealTimeSync() {
+  try {
+    const db = await getDB();
+    const colRef = db.collection(db.fs, 'panel');
+    db.onSnapshot(colRef, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'modified' || change.type === 'added') {
+          const k = change.doc.id;
+          const v = change.doc.data().value;
+          applyRemoteUpdate(k, v);
+        }
+      });
+    });
+  } catch(e) { console.warn('Firestore listener error', e); }
+}
 
 async function init(){
   const saved = await store.get('remax_data_v2');
@@ -268,6 +360,8 @@ async function init(){
     const btn = sb.querySelector('.sidebar-toggle svg');
     if(btn) btn.innerHTML = '<path d="M6 3l5 5-5 5"/>';
   }
+  // Arrancar sync en tiempo real
+  startRealTimeSync();
 }
 
 function updateSidebarCount(){

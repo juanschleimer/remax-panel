@@ -12,19 +12,30 @@ a{color:inherit}
 
 /* Layout */
 .app{display:flex;min-height:100vh}
-.sidebar{width:220px;background:#fff;border-right:1px solid #E5E5E3;padding:0;flex-shrink:0;display:flex;flex-direction:column}
-.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid #E5E5E3}
-.sidebar-logo .brand{font-size:13px;font-weight:600;letter-spacing:.04em;color:#CC0000}
-.sidebar-logo .sub{font-size:11px;color:#888;margin-top:2px}
-.nav{padding:8px 0;flex:1}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;color:#555;cursor:pointer;border-left:2px solid transparent;transition:all .12s}
-.nav-item:hover{background:#F8F8F7;color:#1C1C1A}
-.nav-item.active{background:#FFF5F5;color:#CC0000;border-left-color:#CC0000;font-weight:500}
-.nav-item .icon{width:16px;height:16px;opacity:.6;flex-shrink:0}
+.sidebar{width:220px;background:#1A1A1A;border-right:none;padding:0;flex-shrink:0;display:flex;flex-direction:column;transition:width .2s ease}
+.sidebar.collapsed{width:52px}
+.sidebar-logo{padding:0;border-bottom:1px solid #333;flex-shrink:0}
+.sidebar-logo-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+.sidebar-logo .brand-wrap{display:flex;align-items:center;gap:10px;overflow:hidden}
+.sidebar-logo .remax-logo{flex-shrink:0;width:28px;height:28px}
+.sidebar-logo .brand-text{overflow:hidden;transition:opacity .15s,width .15s}
+.sidebar-logo .brand{font-size:14px;font-weight:700;letter-spacing:.05em;color:#CC0000;white-space:nowrap}
+.sidebar-logo .sub{font-size:10px;color:#888;margin-top:1px;white-space:nowrap}
+.sidebar-toggle{background:none;border:none;cursor:pointer;padding:4px;color:#888;flex-shrink:0;display:flex;align-items:center;transition:color .12s}
+.sidebar-toggle:hover{color:#fff}
+.sidebar.collapsed .brand-text{opacity:0;width:0}
+.sidebar.collapsed .nav-label{opacity:0;height:0;padding:0;margin:0;overflow:hidden}
+.sidebar.collapsed .nav-item span.nav-text{display:none}
+.nav{padding:8px 0;flex:1;overflow:hidden}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#aaa;cursor:pointer;border-left:3px solid transparent;transition:all .12s;white-space:nowrap}
+.nav-item:hover{background:#2A2A2A;color:#fff}
+.nav-item.active{background:#2A0000;color:#FF4444;border-left-color:#CC0000;font-weight:500}
+.nav-item .icon{width:16px;height:16px;opacity:.7;flex-shrink:0}
 .nav-item.active .icon{opacity:1}
-.nav-sep{height:1px;background:#E5E5E3;margin:8px 16px}
-.nav-label{padding:4px 16px;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-top:8px}
-.sidebar-bottom{padding:12px 16px;border-top:1px solid #E5E5E3;font-size:11px;color:#aaa}
+.nav-sep{height:1px;background:#333;margin:6px 12px}
+.nav-label{padding:4px 16px;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-top:6px;transition:all .15s}
+.sidebar-bottom{padding:10px 16px;border-top:1px solid #333;font-size:11px;color:#555;white-space:nowrap;overflow:hidden}
+.sidebar.collapsed .sidebar-bottom{padding:10px 8px;font-size:9px}
 
 .main{flex:1;overflow:auto}
 .page{display:none;padding:28px 32px;max-width:1100px}
@@ -127,37 +138,52 @@ select:focus{outline:none;border-color:#CC0000}
 <div class="app">
 
 <!-- Sidebar -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="brand">RE/MAX</div>
-    <div class="sub">Panel de cuentas · España</div>
+    <div class="sidebar-logo-inner">
+      <div class="brand-wrap">
+        <!-- RE/MAX Balloon SVG logo -->
+        <svg class="remax-logo" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+          <rect width="13" height="13" x="0" y="0" fill="#CC0000"/>
+          <rect width="13" height="13" x="15" y="0" fill="#003087"/>
+          <rect width="28" height="13" x="0" y="15" fill="#CC0000"/>
+        </svg>
+        <div class="brand-text">
+          <div class="brand">RE/MAX</div>
+          <div class="sub">Panel España</div>
+        </div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Colapsar menú">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M10 3L5 8l5 5"/></svg>
+      </button>
+    </div>
   </div>
   <div class="nav">
     <div class="nav-label">Vistas</div>
     <div class="nav-item active" onclick="showPage('resumen')">
       <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-      Resumen general
+      <span class="nav-text">Resumen general</span>
     </div>
     <div class="nav-item" onclick="showPage('ae')">
       <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="4" r="3"/><path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
-      Por AE
+      <span class="nav-text">Por AE</span>
     </div>
     <div class="nav-item" onclick="showPage('locales')">
       <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="6" width="14" height="9" rx="1"/><path d="M5 6V4a3 3 0 016 0v2"/></svg>
-      Locales y equipo
+      <span class="nav-text">Locales y equipo</span>
     </div>
     <div class="nav-item" onclick="showPage('brokers')">
       <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="2.5"/><circle cx="11" cy="4" r="2.5"/><path d="M0 13c0-2.8 2.2-5 5-5h.5M16 13c0-2.8-2.2-5-5-5h-.5"/><path d="M8 8a4 4 0 014 4H4a4 4 0 014-4z"/></svg>
-      Brokers
+      <span class="nav-text">Brokers</span>
     </div>
     <div class="nav-sep"></div>
     <div class="nav-label">Sistema</div>
     <div class="nav-item" onclick="showPage('admin')">
-      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 2.5 3-.5-1 2.8 2 2.2-3 .5-.5 3-2-2-2 2-.5-3-3-.5 2-2.2-1-2.8 3 .5z"/><circle cx="8" cy="8" r="1.5" fill="#fff"/></svg>
-      Datos y archivos
+      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 2.5 3-.5-1 2.8 2 2.2-3 .5-.5 3-2-2-2 2-.5-3-3-.5 2-2.2-1-2.8 3 .5z"/><circle cx="8" cy="8" r="1.5" fill="currentColor" opacity=".4"/></svg>
+      <span class="nav-text">Datos y archivos</span>
     </div>
   </div>
-  <div class="sidebar-bottom" id="sidebar-count">179 locales cargados</div>
+  <div class="sidebar-bottom" id="sidebar-count">179 locales</div>
 </div>
 
 <!-- Main -->
@@ -235,6 +261,13 @@ async function init(){
   populateSelects();
   renderResumen();
   updateSidebarCount();
+  // Restore sidebar collapsed state
+  if(localStorage.getItem('sb_collapsed')==='1'){
+    const sb = document.getElementById('sidebar');
+    sb.classList.add('collapsed');
+    const btn = sb.querySelector('.sidebar-toggle svg');
+    if(btn) btn.innerHTML = '<path d="M6 3l5 5-5 5"/>';
+  }
 }
 
 function updateSidebarCount(){
@@ -249,6 +282,16 @@ function populateSelects(){
     AE_ALL.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;s.appendChild(o);});
     s.value = cur;
   });
+}
+
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  const collapsed = sb.classList.toggle('collapsed');
+  const btn = sb.querySelector('.sidebar-toggle svg');
+  btn.innerHTML = collapsed
+    ? '<path d="M6 3l5 5-5 5"/>'
+    : '<path d="M10 3L5 8l5 5"/>';
+  localStorage.setItem('sb_collapsed', collapsed ? '1' : '0');
 }
 
 function showPage(id){
@@ -271,14 +314,29 @@ function renderResumen(){
     won=DATA.filter(r=>r.status==='WON').length,
     lost=DATA.filter(r=>r.status==='LOST').length,
     ongoing=DATA.filter(r=>r.status==='ONGOING').length;
+  const contacted_on = DATA.filter(r=>r.status==='ONGOING'&&CONTACTED[r.oficina]).length;
   const p=n=>Math.round(n/total*100);
+
+  const aeRows = AE_ALL.map(ae=>{
+    const on = DATA.filter(r=>r.ae===ae&&r.status==='ONGOING');
+    const ct = on.filter(r=>CONTACTED[r.oficina]).length;
+    const pct = on.length>0?Math.round(ct/on.length*100):0;
+    const c = AE_COL[ae]||{cls:'av-s'};
+    return `<tr>
+      <td><span class="avatar ${c.cls}" style="margin-right:6px;width:22px;height:22px;font-size:9px">${ae[0]}</span>${ae}</td>
+      <td>${on.length}</td>
+      <td>${ct} <span style="color:#aaa;font-size:11px">(${pct}%)</span></td>
+      <td>${on.length-ct}</td>
+    </tr>`;
+  }).join('');
+
   document.getElementById('resumen-content').innerHTML=`
     <div class="metric-grid g3">
-      <div class="metric"><div class="metric-label">Ongoing</div><div class="metric-num" style="color:#1D4ED8">${ongoing}</div><div class="metric-sub">${p(ongoing)}% del total</div></div>
+      <div class="metric"><div class="metric-label">Ongoing</div><div class="metric-num" style="color:#1D4ED8">${ongoing}</div><div class="metric-sub">${contacted_on} contactados · ${ongoing-contacted_on} pendientes</div></div>
       <div class="metric"><div class="metric-label">Won</div><div class="metric-num" style="color:#166534">${won}</div><div class="metric-sub">${p(won)}% del total</div></div>
       <div class="metric"><div class="metric-label">Lost</div><div class="metric-num" style="color:#991B1B">${lost}</div><div class="metric-sub">${p(lost)}% del total</div></div>
     </div>
-    <div class="card" style="margin-bottom:24px">
+    <div class="card" style="margin-bottom:20px">
       <div class="section-title" style="margin-bottom:12px">Distribución global · ${total} cuentas</div>
       <div class="bar-wrap">
         <div class="bar-seg" style="width:${p(ongoing)}%;background:#3B82F6">${p(ongoing)}%</div>
@@ -290,6 +348,13 @@ function renderResumen(){
         <span><span style="width:8px;height:8px;border-radius:50%;background:#22C55E;display:inline-block;margin-right:5px"></span>Won</span>
         <span><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:inline-block;margin-right:5px"></span>Lost</span>
       </div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px">Seguimiento por AE — cuentas ongoing</div>
+      <table style="border:none">
+        <thead><tr><th>AE</th><th>Ongoing</th><th>Contactados</th><th>Sin contactar</th></tr></thead>
+        <tbody>${aeRows}</tbody>
+      </table>
     </div>`;
 }
 
@@ -333,6 +398,23 @@ function renderAE(){
 }
 
 // ── LOCALES ──────────────────────────────────────────────
+function changeStatus(oficina, newStatus){
+  const idx = DATA.findIndex(r=>r.oficina===oficina && r.status==='ONGOING');
+  if(idx<0) return;
+  DATA[idx].status = newStatus;
+  DATA[idx].ae = 'Sin asignar';
+  // Remove from contacted
+  delete CONTACTED[oficina];
+  store.set('remax_contacted', CONTACTED);
+  store.set('remax_data_v2', DATA);
+  updateSidebarCount();
+  populateSelects();
+  const ae = document.getElementById('sel-locales').value;
+  if(ae) renderLocales(ae);
+  if(document.getElementById('page-ae').classList.contains('active')) renderAE();
+  if(document.getElementById('page-resumen').classList.contains('active')) renderResumen();
+}
+
 function toggleContact(of){
   CONTACTED[of] = !CONTACTED[of];
   store.set('remax_contacted', CONTACTED);
@@ -378,11 +460,20 @@ function renderLocales(ae){
             ${r.direccion&&r.direccion!='nan'?`<div style="font-size:11px;color:#aaa;margin-top:2px">${r.direccion}</div>`:''}
             ${r.email&&r.email!='nan'?`<div style="font-size:11px;color:#aaa;margin-top:1px">${r.email}</div>`:''}
           </div>
-          <div style="flex-shrink:0">
-            ${isCt
-              ?`<button class="btn-contacted" onclick="toggleContact('${r.oficina.replace(/'/g,"\'")}')">✓ Contactado</button>
-                <button class="btn-uncontact" style="margin-top:4px;display:block" onclick="toggleContact('${r.oficina.replace(/'/g,"\'")}')">deshacer</button>`
-              :`<button class="btn-contact" onclick="toggleContact('${r.oficina.replace(/'/g,"\'")}')">Marcar contactado</button>`
+          <div style="flex-shrink:0;display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+            ${r.status==='ONGOING'
+              ? `${isCt
+                  ?`<button class="btn-contacted" onclick="toggleContact('${r.oficina.replace(/'/g,"\\'")}')">✓ Contactado</button>
+                    <button class="btn-uncontact" onclick="toggleContact('${r.oficina.replace(/'/g,"\\'")}')">deshacer</button>`
+                  :`<button class="btn-contact" onclick="toggleContact('${r.oficina.replace(/'/g,"\\'")}')">Marcar contactado</button>`
+                }
+                <div style="display:flex;gap:4px;margin-top:2px">
+                  <button onclick="if(confirm('¿Marcar ${r.oficina} como WON? Se moverá al pool sin asignar.'))changeStatus('${r.oficina.replace(/'/g,"\\'")}','WON')" 
+                    style="padding:3px 8px;font-size:10px;border-radius:4px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;cursor:pointer">→ Won</button>
+                  <button onclick="if(confirm('¿Marcar ${r.oficina} como LOST? Se moverá al pool sin asignar.'))changeStatus('${r.oficina.replace(/'/g,"\\'")}','LOST')" 
+                    style="padding:3px 8px;font-size:10px;border-radius:4px;border:1px solid #FECACA;background:#FEF2F2;color:#991B1B;cursor:pointer">→ Lost</button>
+                </div>`
+              : `<span class="badge ${r.status==='WON'?'b-wo':'b-lo'}" style="font-size:12px">${r.status}</span>`
             }
           </div>
         </div>
@@ -435,15 +526,14 @@ let uploadedFiles = {};
 function renderAdmin(){
   document.getElementById('admin-content').innerHTML=`
     <div class="alert alert-info" style="margin-bottom:20px">
-      Carga los tres archivos Excel para regenerar el panel. Los datos se guardan automáticamente y son compartidos con todos los usuarios.
+      Carga los archivos de agentes y oficinas para actualizar datos del equipo. La asignación de AE y estado se edita directamente en la tabla de abajo.
     </div>
 
-    <div class="section-title" style="margin-bottom:16px">Archivos base</div>
+    <div class="section-title" style="margin-bottom:16px">Archivos base (solo carga)</div>
 
     ${[
       {key:'agentes',label:'Roster de agentes',desc:'Columnas requeridas: Nombre, Apellidos, Puesto, Oficina, Email, Móvil'},
-      {key:'oficinas',label:'Roster de oficinas',desc:'Columnas requeridas: Nombre, Zona, Teléfono, Email, Ciudad, Provincia, Dirección'},
-      {key:'asignacion',label:'Archivo de asignación',desc:'Columnas requeridas: ACCOUNT OWNER, Oficina, condicion'}
+      {key:'oficinas',label:'Roster de oficinas',desc:'Columnas requeridas: Nombre, Zona, Teléfono, Email, Ciudad, Provincia, Dirección'}
     ].map(f=>`
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -467,6 +557,45 @@ function renderAdmin(){
     <div id="process-log"></div>
 
     <div class="divider"></div>
+
+    <!-- TABLA DE ASIGNACIÓN EDITABLE -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="section-title">Asignación de AE y estado</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Edita directamente en la tabla. Los cambios se aplican al instante.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="addAsignRow()">+ Nueva oficina</button>
+        <button class="btn btn-sm" onclick="exportAsignExcel()">Exportar Excel</button>
+        <label style="cursor:pointer">
+          <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importAsignExcel(event)">
+          <span class="btn btn-sm">Importar Excel</span>
+        </label>
+      </div>
+    </div>
+
+    <div style="margin-bottom:10px">
+      <input type="text" id="asign-search" placeholder="Buscar oficina..." oninput="filterAsignTable()" 
+        style="padding:7px 12px;border:1px solid #E5E5E3;border-radius:6px;font-size:13px;width:260px">
+    </div>
+
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid #E5E5E3">
+      <table id="asign-table" style="border:none;border-radius:0">
+        <thead>
+          <tr>
+            <th style="width:180px">Oficina</th>
+            <th style="width:140px">AE</th>
+            <th style="width:120px">Estado</th>
+            <th style="width:60px;text-align:center">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="asign-tbody">
+          ${buildAsignRows()}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
     <div class="section-title" style="margin-bottom:14px">Estado del sistema</div>
     <div class="metric-grid g3" style="margin-bottom:20px">
       <div class="metric"><div class="metric-label">Locales cargados</div><div class="metric-num" style="font-size:22px">${DATA.length}</div></div>
@@ -482,8 +611,118 @@ function renderAdmin(){
   checkFileStatuses();
 }
 
+function buildAsignRows(){
+  return DATA.map((r,i)=>{
+    const statusColor = r.status==='ONGOING'?'#1D4ED8':r.status==='WON'?'#166534':'#991B1B';
+    const statusBg = r.status==='ONGOING'?'#EFF6FF':r.status==='WON'?'#F0FDF4':'#FEF2F2';
+    const isNew = r.isNew ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;border-radius:3px;padding:1px 5px;border:1px solid #FCD34D">nueva</span>' : '';
+    return `<tr id="asign-row-${i}" data-oficina="${r.oficina.toLowerCase()}">
+      <td style="font-weight:500">${r.oficina} ${isNew}</td>
+      <td>
+        <select onchange="updateAsignRow(${i},'ae',this.value)" style="margin:0;min-width:auto;padding:4px 8px;font-size:12px;width:120px">
+          ${['JUAN','LAIA','RAISA','Sin asignar'].map(ae=>`<option value="${ae}"${r.ae===ae?' selected':''}>${ae}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <select onchange="updateAsignRow(${i},'status',this.value)" style="margin:0;min-width:auto;padding:4px 8px;font-size:12px;width:100px;color:${statusColor};background:${statusBg};border-color:${statusColor}40">
+          ${['ONGOING','WON','LOST'].map(s=>`<option value="${s}"${r.status===s?' selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td style="text-align:center">
+        <button class="btn btn-sm" style="padding:2px 8px;font-size:11px;color:#991B1B;border-color:#FECACA" onclick="deleteAsignRow(${i})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateAsignRow(idx, field, value){
+  DATA[idx][field]=value;
+  await store.set('remax_data_v2', DATA);
+  updateSidebarCount();
+  populateSelects();
+  // Update metric counts without full re-render
+  const adminContent=document.getElementById('admin-content');
+  if(adminContent){
+    const metrics=adminContent.querySelectorAll('.metric-num');
+    if(metrics[0]) metrics[0].textContent=DATA.length;
+    if(metrics[2]) metrics[2].textContent=DATA.filter(r=>r.ae==='Sin asignar'&&r.status==='ONGOING').length;
+  }
+}
+
+function filterAsignTable(){
+  const q=(document.getElementById('asign-search').value||'').toLowerCase();
+  document.querySelectorAll('#asign-tbody tr').forEach(tr=>{
+    tr.style.display=(!q||tr.dataset.oficina.includes(q))?'':'none';
+  });
+}
+
+async function addAsignRow(){
+  const nombre=prompt('Nombre de la nueva oficina:');
+  if(!nombre||!nombre.trim())return;
+  const newRow={oficina:nombre.trim().toUpperCase(),ae:'Sin asignar',status:'ONGOING',
+    ciudad:'',provincia:'',zona:'',telefono:'',email:'',direccion:'',
+    agentes:0,brokers:0,managers:0,coordinadores:0,broker_list:[]};
+  DATA.push(newRow);
+  await store.set('remax_data_v2',DATA);
+  updateSidebarCount();
+  populateSelects();
+  // Re-render the table body
+  const tbody=document.getElementById('asign-tbody');
+  if(tbody) tbody.innerHTML=buildAsignRows();
+}
+
+async function deleteAsignRow(idx){
+  const nombre=DATA[idx].oficina;
+  if(!confirm(`¿Eliminar "${nombre}" de la lista?`))return;
+  DATA.splice(idx,1);
+  await store.set('remax_data_v2',DATA);
+  updateSidebarCount();
+  populateSelects();
+  const tbody=document.getElementById('asign-tbody');
+  if(tbody) tbody.innerHTML=buildAsignRows();
+}
+
+function exportAsignExcel(){
+  const rows=DATA.map(r=>({'Oficina':r.oficina,'ACCOUNT OWNER':r.ae,'condicion':r.status}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Asignacion');
+  XLSX.writeFile(wb,'asignacion_remax_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+async function importAsignExcel(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  try{
+    const ab=await file.arrayBuffer();
+    const wb=XLSX.read(ab,{type:'arraybuffer'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    // Merge: update ae+status for existing oficinas, keep broker/team data
+    let updated=0,added=0;
+    rows.forEach(row=>{
+      const of=String(row.Oficina||row.oficina||'').trim().toUpperCase();
+      const ao=String(row['ACCOUNT OWNER']||row.ae||'').trim();
+      const cond=String(row.condicion||row.status||'').trim().toUpperCase();
+      let ae,status;
+      if(['WON','LOST'].includes(ao.toUpperCase())){ae='Sin asignar';status=ao.toUpperCase();}
+      else if(!ao||ao==='nan'){ae='Sin asignar';status='ONGOING';}
+      else{ae=ao;status=['WON','LOST','ONGOING'].includes(cond)?cond:'ONGOING';}
+      const existing=DATA.findIndex(d=>d.oficina.toUpperCase()===of);
+      if(existing>=0){DATA[existing].ae=ae;DATA[existing].status=status;updated++;}
+      else{DATA.push({oficina:of,ae,status,ciudad:'',provincia:'',zona:'',telefono:'',email:'',direccion:'',agentes:0,brokers:0,managers:0,coordinadores:0,broker_list:[]});added++;}
+    });
+    await store.set('remax_data_v2',DATA);
+    updateSidebarCount();
+    populateSelects();
+    const tbody=document.getElementById('asign-tbody');
+    if(tbody) tbody.innerHTML=buildAsignRows();
+    log('success',`Importado: ${updated} oficinas actualizadas, ${added} nuevas.`);
+  }catch(e){log('warn','Error al importar: '+e.message);}
+}
+
 async function checkFileStatuses(){
-  for(const k of ['agentes','oficinas','asignacion']){
+  for(const k of ['agentes','oficinas']){
     const el=document.getElementById('file-status-'+k);
     if(!el)continue;
     const d=await store.get('remax_file_'+k);
@@ -504,8 +743,8 @@ async function handleFile(event,key){
     uploadedFiles[key]={name:file.name,rows:json};
     await store.set('remax_file_'+key,{name:file.name,rows:json});
     el.textContent='✓ '+file.name;el.style.color='#166534';
-    const allLoaded=Object.keys(uploadedFiles).length>=3||
-      (await Promise.all(['agentes','oficinas','asignacion'].map(k=>store.get('remax_file_'+k)))).every(Boolean);
+    const allLoaded=uploadedFiles.agentes&&uploadedFiles.oficinas||
+      (await Promise.all(['agentes','oficinas'].map(k=>store.get('remax_file_'+k)))).every(Boolean);
     document.getElementById('process-btn-wrap').style.display=allLoaded?'block':'none';
     log('info',`"${file.name}" cargado — ${json.length} filas`);
   }catch(e){el.textContent='Error: '+e.message;el.style.color='#991B1B';}
@@ -514,11 +753,9 @@ async function handleFile(event,key){
 async function processAllFiles(){
   log('info','Procesando archivos...');
   try{
-    const [fa,fo,fs]=await Promise.all(['agentes','oficinas','asignacion'].map(k=>store.get('remax_file_'+k)));
-    if(!fa||!fo||!fs){log('warn','Faltan archivos. Carga los tres primero.');return;}
-    // Merge them using the same logic
-    const agentes=fa.rows,oficinas=fo.rows,cuentas=fs.rows;
-    // Build maps
+    const [fa,fo]=await Promise.all(['agentes','oficinas'].map(k=>store.get('remax_file_'+k)));
+    if(!fa||!fo){log('warn','Faltan archivos. Carga agentes y oficinas primero.');return;}
+    const agentes=fa.rows,oficinas=fo.rows;
     const ofMap={};
     oficinas.forEach(o=>ofMap[String(o.Nombre||'').trim().toUpperCase()]=o);
     const puestoMap={'Agente Asociado':'agentes','Broker':'brokers','Manager Administrador':'managers','Manager Asociado':'managers','Coordinador/a':'coordinadores'};
@@ -533,29 +770,68 @@ async function processAllFiles(){
         brokerMap[of].push({nombre:String(a.Nombre||'')+' '+String(a.Apellidos||''),email:String(a.Email||''),movil:String(a.Móvil||a['Móvil']||a.Movil||'')});
       }
     });
-    const data=[];
-    cuentas.forEach(row=>{
-      let ao=String(row['ACCOUNT OWNER']||'').trim();
-      let cond=String(row.condicion||'').trim().toUpperCase();
-      let ae,status;
-      if(['WON','LOST'].includes(ao.toUpperCase())||ao.toLowerCase()==='lost'){ae='Sin asignar';status=ao.toUpperCase();}
-      else if(!ao||ao==='nan'){ae='Sin asignar';status='ONGOING';}
-      else{ae=ao;status=['WON','LOST','ONGOING'].includes(cond)?cond:'ONGOING';}
-      const of=String(row.Oficina||'').trim();
-      const ofData=ofMap[of.toUpperCase()]||{};
-      const stats=statsMap[of]||{agentes:0,brokers:0,managers:0,coordinadores:0};
-      data.push({oficina:of,ae,status,
-        ciudad:String(ofData.Ciudad||''),provincia:String(ofData.Provincia||''),
-        zona:String(ofData.Zona||''),telefono:String(ofData.Teléfono||ofData.Telefono||''),
-        email:String(ofData.Email||''),direccion:String(ofData.Dirección||ofData.Direccion||''),
-        agentes:stats.agentes,brokers:stats.brokers,managers:stats.managers,coordinadores:stats.coordinadores,
-        broker_list:brokerMap[of]||[]});
+
+    // Build set of all office names currently in DATA (preserve their ae+status)
+    const existingMap = {};
+    DATA.forEach((row,i)=>{ existingMap[row.oficina.toUpperCase()] = i; });
+
+    // Track new offices
+    let newCount = 0;
+    const allRosterOffices = new Set([...Object.keys(ofMap), ...Object.keys(statsMap)]);
+
+    allRosterOffices.forEach(ofKey=>{
+      const of = ofKey; // uppercase key
+      const ofData = ofMap[of] || {};
+      const displayName = ofData.Nombre || of;
+      const stats = statsMap[displayName] || statsMap[of] || {agentes:0,brokers:0,managers:0,coordinadores:0};
+      const brokers = brokerMap[displayName] || brokerMap[of] || [];
+
+      if(existingMap[of] !== undefined){
+        // Update team data but NEVER touch ae or status
+        const idx = existingMap[of];
+        if(ofData.Ciudad) DATA[idx].ciudad = String(ofData.Ciudad||'');
+        if(ofData.Provincia) DATA[idx].provincia = String(ofData.Provincia||'');
+        if(ofData.Zona) DATA[idx].zona = String(ofData.Zona||'');
+        DATA[idx].telefono = String(ofData.Teléfono||ofData.Telefono||DATA[idx].telefono||'');
+        DATA[idx].email = String(ofData.Email||DATA[idx].email||'');
+        DATA[idx].direccion = String(ofData.Dirección||ofData.Direccion||DATA[idx].direccion||'');
+        DATA[idx].agentes = stats.agentes;
+        DATA[idx].brokers = stats.brokers;
+        DATA[idx].managers = stats.managers;
+        DATA[idx].coordinadores = stats.coordinadores;
+        if(brokers.length) DATA[idx].broker_list = brokers;
+      } else {
+        // New office — add as Sin asignar / ONGOING
+        DATA.push({
+          oficina: displayName,
+          ae: 'Sin asignar',
+          status: 'ONGOING',
+          ciudad: String(ofData.Ciudad||''),
+          provincia: String(ofData.Provincia||''),
+          zona: String(ofData.Zona||''),
+          telefono: String(ofData.Teléfono||ofData.Telefono||''),
+          email: String(ofData.Email||''),
+          direccion: String(ofData.Dirección||ofData.Direccion||''),
+          agentes: stats.agentes,
+          brokers: stats.brokers,
+          managers: stats.managers,
+          coordinadores: stats.coordinadores,
+          broker_list: brokers,
+          isNew: true
+        });
+        newCount++;
+      }
     });
-    DATA=data;
-    await store.set('remax_data_v2',DATA);
+
+    await store.set('remax_data_v2', DATA);
     updateSidebarCount();
     populateSelects();
-    log('success',`Panel regenerado. ${DATA.length} locales procesados.`);
+    const tbody=document.getElementById('asign-tbody');
+    if(tbody) tbody.innerHTML=buildAsignRows();
+    const msg = newCount>0
+      ? `Actualizado. Datos de equipo frescos. <strong>${newCount} nueva${newCount>1?'s':''} oficina${newCount>1?'s':''}</strong> añadida${newCount>1?'s':''} como Sin asignar/ONGOING — revísala${newCount>1?'s':''} en la tabla.`
+      : `Datos de equipo actualizados. ${DATA.length} locales. Sin oficinas nuevas.`;
+    log('success', msg);
   }catch(e){log('warn','Error al procesar: '+e.message);console.error(e);}
 }
 

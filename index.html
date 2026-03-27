@@ -1,963 +1,610 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Remax Spain — Panel de cuentas</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculadora de Tarifas · Lystos</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Tarifas Lystos" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231a1a2e'/%3E%3Crect x='0' y='0' width='8' height='180' rx='4' fill='%23e94560'/%3E%3Ctext x='100' y='105' text-anchor='middle' font-family='system-ui' font-weight='900' font-size='56' fill='white'%3E€%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F4;color:#1C1C1A;font-size:14px;line-height:1.5}
-a{color:inherit}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --c1: #1b4f72; --c2: #145a32; --cv: #6c3483;
+    --dark: #1a1a2e; --accent: #e94560;
+    --bg: #f0f3f8; --white: #ffffff;
+    --gray: #eaecee; --text: #1a1a2e;
+    --muted: #888; --border: #e0e0e0;
+  }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); padding-bottom: 48px; }
 
-/* Layout */
-.app{display:flex;min-height:100vh}
-.sidebar{width:220px;background:#1A1A1A;border-right:none;padding:0;flex-shrink:0;display:flex;flex-direction:column;transition:width .2s ease}
-.sidebar.collapsed{width:52px}
-.sidebar-logo{padding:0;border-bottom:1px solid #333;flex-shrink:0}
-.sidebar-logo-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
-.sidebar-logo .brand-wrap{display:flex;align-items:center;gap:10px;overflow:hidden}
-.sidebar-logo .remax-logo{flex-shrink:0;width:28px;height:28px}
-.sidebar-logo .brand-text{overflow:hidden;transition:opacity .15s,width .15s}
-.sidebar-logo .brand{font-size:14px;font-weight:700;letter-spacing:.05em;color:#CC0000;white-space:nowrap}
-.sidebar-logo .sub{font-size:10px;color:#888;margin-top:1px;white-space:nowrap}
-.sidebar-toggle{background:none;border:none;cursor:pointer;padding:4px;color:#888;flex-shrink:0;display:flex;align-items:center;transition:color .12s}
-.sidebar-toggle:hover{color:#fff}
-.sidebar.collapsed .brand-text{opacity:0;width:0}
-.sidebar.collapsed .nav-label{opacity:0;height:0;padding:0;margin:0;overflow:hidden}
-.sidebar.collapsed .nav-item span.nav-text{display:none}
-.nav{padding:8px 0;flex:1;overflow:hidden}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#aaa;cursor:pointer;border-left:3px solid transparent;transition:all .12s;white-space:nowrap}
-.nav-item:hover{background:#2A2A2A;color:#fff}
-.nav-item.active{background:#2A0000;color:#FF4444;border-left-color:#CC0000;font-weight:500}
-.nav-item .icon{width:16px;height:16px;opacity:.7;flex-shrink:0}
-.nav-item.active .icon{opacity:1}
-.nav-sep{height:1px;background:#333;margin:6px 12px}
-.nav-label{padding:4px 16px;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-top:6px;transition:all .15s}
-.sidebar-bottom{padding:10px 16px;border-top:1px solid #333;font-size:11px;color:#555;white-space:nowrap;overflow:hidden}
-.sidebar.collapsed .sidebar-bottom{padding:10px 8px;font-size:9px}
+  .header { background: var(--dark); padding: 0 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 16px rgba(0,0,0,.35); }
+  .header-bar { width: 4px; height: 34px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+  .header-text { padding: 15px 0; flex: 1; }
+  .header-title { color: #fff; font-weight: 800; font-size: 19px; letter-spacing: -.3px; }
+  .header-sub   { color: rgba(255,255,255,.38); font-size: 11px; margin-top: 2px; }
+  .stripe { height: 3px; background: linear-gradient(90deg,#e94560,#1b4f72,#145a32,#6c3483); }
 
-.main{flex:1;overflow:auto}
-.page{display:none;padding:28px 32px;max-width:1100px}
-.page.active{display:block}
-.page-title{font-size:20px;font-weight:600;margin-bottom:4px}
-.page-sub{font-size:13px;color:#888;margin-bottom:24px}
+  .btn-edit { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,.2); border-radius: 9px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.8); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .18s; white-space: nowrap; }
+  .btn-edit:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.4); color: #fff; }
 
-/* Cards & grids */
-.metric-grid{display:grid;gap:12px;margin-bottom:24px}
-.g3{grid-template-columns:repeat(3,1fr)}
-.g4{grid-template-columns:repeat(4,1fr)}
-.g2{grid-template-columns:repeat(2,1fr)}
-.metric{background:#fff;border:1px solid #E5E5E3;border-radius:8px;padding:16px}
-.metric-label{font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-.metric-num{font-size:28px;font-weight:600;line-height:1}
-.metric-sub{font-size:11px;color:#aaa;margin-top:4px}
-.card{background:#fff;border:1px solid #E5E5E3;border-radius:8px;padding:16px;margin-bottom:10px}
-.card.contacted{border-color:#86EFAC;background:#F0FDF4}
+  .mode-bar { max-width: 1140px; margin: 20px auto 0; padding: 0 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mode-label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .7px; text-transform: uppercase; }
+  .toggle-group { display: flex; background: #fff; border-radius: 10px; padding: 4px; gap: 3px; box-shadow: 0 1px 8px rgba(0,0,0,.08); }
+  .toggle-btn { padding: 7px 15px; border: none; border-radius: 7px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .18s; background: transparent; color: var(--muted); }
+  .toggle-btn.active { background: var(--dark); color: #fff; }
+  .toggle-btn:hover:not(.active) { background: var(--gray); color: var(--text); }
 
-/* Badges */
-.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;line-height:1.4}
-.b-on{background:#EFF6FF;color:#1D4ED8}
-.b-wo{background:#F0FDF4;color:#166534}
-.b-lo{background:#FEF2F2;color:#991B1B}
-.b-ct{background:#ECFDF5;color:#065F46;border:1px solid #6EE7B7}
-.b-nc{background:#FFFBEB;color:#92400E;border:1px solid #FCD34D}
+  .grid { max-width: 1140px; margin: 16px auto 0; padding: 0 16px; display: grid; gap: 16px; }
+  .grid.mode-1 { grid-template-columns: minmax(0,520px); justify-content: center; }
+  .grid.mode-2 { grid-template-columns: 1fr 1fr; }
+  .grid.mode-3 { grid-template-columns: 1fr 1fr 1fr; }
 
-/* Table */
-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #E5E5E3}
-th{background:#F8F8F7;padding:10px 14px;text-align:left;font-size:11px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #E5E5E3}
-td{padding:10px 14px;border-bottom:1px solid #F0F0EE;color:#1C1C1A;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#FAFAF9}
-.total-row td{background:#F8F8F7;font-weight:600;border-top:2px solid #E5E5E3}
+  .card { background: var(--white); border-radius: 18px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.07); display: flex; flex-direction: column; animation: fadeUp .3s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .card-header { padding: 15px 20px; }
+  .card-title { color: #fff; font-weight: 800; font-size: 15px; }
+  .card-sub   { color: rgba(255,255,255,.5); font-size: 11px; margin-top: 3px; }
 
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid #E5E5E3;background:#fff;font-size:12px;color:#444;cursor:pointer;font-weight:500;transition:all .12s}
-.btn:hover{background:#F8F8F7;border-color:#ccc}
-.btn-primary{background:#CC0000;color:#fff;border-color:#CC0000}
-.btn-primary:hover{background:#B00000;border-color:#B00000}
-.btn-sm{padding:4px 10px;font-size:11px}
-.btn-contact{background:#ECFDF5;color:#065F46;border:1px solid #6EE7B7;padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:500}
-.btn-contact:hover{background:#D1FAE5}
-.btn-contacted{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:500}
-.btn-uncontact{background:#fff;color:#aaa;border:1px solid #E5E5E3;padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer}
+  .inputs { padding: 15px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .field-label { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: .9px; text-transform: uppercase; margin-bottom: 4px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  select, input[type=number] { width: 100%; padding: 9px 11px; border-radius: 9px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); outline: none; transition: border-color .18s; }
+  select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; cursor: pointer; }
+  input[type=number]::-webkit-inner-spin-button { opacity: .5; }
 
-/* Pills */
-.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid #E5E5E3;color:#666;background:#F8F8F7}
-.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid #F0F0EE}
+  .div { height: 1px; background: var(--border); margin: 0 20px; }
+  .detail { padding: 10px 20px; display: flex; flex-direction: column; gap: 5px; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .detail-row .lbl { color: var(--muted); }
+  .detail-row .val { font-weight: 700; }
+  .saving-box { margin-top: 4px; background: #eafaf1; border-radius: 9px; padding: 7px 10px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #27ae60; }
 
-/* Select */
-select{background:#fff;border:1px solid #E5E5E3;border-radius:6px;padding:7px 12px;font-size:13px;color:#1C1C1A;cursor:pointer;margin-bottom:16px;min-width:200px}
-select:focus{outline:none;border-color:#CC0000}
+  .total-box { margin: 10px 20px 20px; border-radius: 13px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+  .total-lbl { color: rgba(255,255,255,.8); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
+  .total-val { color: #fff; font-weight: 800; font-size: 22px; }
 
-/* Progress bar */
-.bar-wrap{background:#F0F0EE;border-radius:4px;height:20px;overflow:hidden;display:flex;gap:2px;margin:10px 0}
-.bar-seg{display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500;transition:width .3s}
+  .legend { margin: 12px 20px 0; background: rgba(108,52,131,.06); border: 1px solid rgba(108,52,131,.18); border-radius: 10px; padding: 9px 12px; font-size: 11px; color: #555; line-height: 1.8; }
+  .compare-fields { padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .cmp-field { padding: 8px 11px; border-radius: 8px; font-size: 13px; min-height: 36px; display: flex; align-items: center; }
+  .diff-green { color: #27ae60; font-weight: 700; }
+  .diff-red   { color: #e74c3c; font-weight: 700; }
+  .diff-gray  { color: #aaa; font-style: italic; }
 
-/* Upload zone */
-.upload-zone{border:2px dashed #E5E5E3;border-radius:8px;padding:28px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:12px}
-.upload-zone:hover{border-color:#CC0000;background:#FFF5F5}
-.upload-zone.loaded{border-color:#6EE7B7;background:#F0FDF4;border-style:solid}
-.upload-label{font-size:13px;color:#888;margin-top:8px}
-.upload-name{font-size:12px;color:#065F46;font-weight:500;margin-top:4px}
+  /* MODAL */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,30,.6); z-index: 500; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; }
+  .overlay.open { display: flex; }
+  .tarifas-panel { background: #fff; border-radius: 20px; width: 100%; max-width: 820px; max-height: 88vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.3); animation: popIn .22s ease; }
+  @keyframes popIn { from { opacity:0; transform:scale(.93); } to { opacity:1; transform:scale(1); } }
+  .panel-header { background: var(--dark); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .panel-title { color: #fff; font-weight: 800; font-size: 17px; }
+  .panel-sub   { color: rgba(255,255,255,.38); font-size: 11px; margin-top: 3px; }
+  .panel-stripe { height: 3px; background: linear-gradient(90deg,#e94560,#1b4f72,#145a32,#6c3483); flex-shrink: 0; }
+  .btn-close { background: rgba(255,255,255,.1); border: none; color: rgba(255,255,255,.7); width: 32px; height: 32px; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .btn-close:hover { background: rgba(255,255,255,.2); color: #fff; }
+  .panel-body { overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 28px; }
 
-/* Avatar */
-.avatar{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
-.avatar-lg{width:42px;height:42px;font-size:13px}
-.av-j{background:#EFF6FF;color:#1D4ED8}
-.av-l{background:#F0FDF4;color:#166534}
-.av-r{background:#F5F3FF;color:#5B21B6}
-.av-s{background:#F8F8F7;color:#555}
+  .tarifa-section {}
+  .tarifa-title { font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .tarifa-badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: .4px; }
 
-/* Office icon */
-.of-icon{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+  .tarifa-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tarifa-table th { background: var(--gray); padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: .7px; text-transform: uppercase; }
+  .tarifa-table th:first-child { border-radius: 8px 0 0 8px; }
+  .tarifa-table th:last-child  { border-radius: 0 8px 8px 0; }
+  .tarifa-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; }
+  .tarifa-table tr:last-child td { border-bottom: none; }
+  .tarifa-table tr:hover td { background: #fafafa; }
+  .tarifa-table input { width: 68px; padding: 5px 6px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text); text-align: center; outline: none; transition: border-color .15s; }
+  .tarifa-table input:focus { border-color: var(--accent); }
+  .del-btn { background: none; border: none; color: #ccc; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 5px; transition: all .15s; line-height: 1; }
+  .del-btn:hover { color: #e74c3c; background: #fdecea; }
+  .add-row-btn { margin-top: 8px; width: 100%; padding: 8px; background: none; border: 1.5px dashed #ddd; border-radius: 9px; font-family: inherit; font-size: 12px; color: var(--muted); cursor: pointer; transition: all .15s; }
+  .add-row-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff5f6; }
 
-/* Empty state */
-.empty{padding:48px;text-align:center;color:#aaa;font-size:13px}
-.empty svg{margin:0 auto 12px;opacity:.3}
+  .global-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .global-grid input { width: 100%; padding: 9px 11px; border: 1.5px solid #ddd; border-radius: 9px; font-family: inherit; font-size: 14px; font-weight: 700; outline: none; transition: border-color .15s; }
+  .global-grid input:focus { border-color: var(--accent); }
 
-/* Section header */
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.section-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em}
-.divider{height:1px;background:#E5E5E3;margin:24px 0}
+  .panel-footer { padding: 15px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: #fafafa; gap: 10px; }
+  .save-hint { font-size: 11px; color: var(--muted); }
+  .btn-primary { padding: 10px 24px; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; transition: all .18s; }
+  .btn-primary:hover { background: #c0392b; }
+  .btn-secondary { padding: 10px 16px; background: none; border: 1.5px solid #ddd; border-radius: 10px; color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .18s; }
+  .btn-secondary:hover { border-color: #999; color: var(--text); }
 
-/* Alert */
-.alert{padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px}
-.alert-info{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE}
-.alert-success{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
-.alert-warning{background:#FFFBEB;color:#92400E;border:1px solid #FCD34D}
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); background: #1a1a2e; color: #fff; padding: 11px 22px; border-radius: 12px; font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none; transition: all .28s; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .footer-note { text-align: center; color: #aab; font-size: 11px; margin-top: 12px; }
 
-@media(max-width:700px){
-  .sidebar{width:180px}
-  .g3,.g4{grid-template-columns:repeat(2,1fr)}
-  .page{padding:16px}
-}
+  @media (max-width: 700px) {
+    .grid.mode-2, .grid.mode-3 { grid-template-columns: 1fr; }
+    .global-grid { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
-<div class="app">
 
-<!-- Sidebar -->
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-inner">
-      <div class="brand-wrap">
-        <!-- RE/MAX Balloon SVG logo -->
-        <svg class="remax-logo" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-          <rect width="13" height="13" x="0" y="0" fill="#CC0000"/>
-          <rect width="13" height="13" x="15" y="0" fill="#003087"/>
-          <rect width="28" height="13" x="0" y="15" fill="#CC0000"/>
-        </svg>
-        <div class="brand-text">
-          <div class="brand">RE/MAX</div>
-          <div class="sub">Panel España</div>
-        </div>
+<div class="header">
+  <div class="header-bar"></div>
+  <div class="header-text">
+    <div class="header-title">Calculadora de Tarifas</div>
+    <div class="header-sub">LYSTOS · Agency &amp; Premium · Estándar + REMAX</div>
+  </div>
+  <button class="btn-edit" onclick="openPanel()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Editar tarifas
+  </button>
+</div>
+<div class="stripe"></div>
+
+<div class="mode-bar">
+  <span class="mode-label">Vista:</span>
+  <div class="toggle-group">
+    <button class="toggle-btn" data-mode="1" onclick="setMode(1)">1 escenario</button>
+    <button class="toggle-btn active" data-mode="2" onclick="setMode(2)">2 escenarios</button>
+    <button class="toggle-btn" data-mode="3" onclick="setMode(3)">Comparativa</button>
+  </div>
+</div>
+
+<div class="grid mode-2" id="grid">
+
+  <!-- Escenario 1 -->
+  <div class="card" id="card1" style="border:2px solid rgba(27,79,114,.22)">
+    <div class="card-header" style="background:#1b4f72">
+      <div class="card-title">Escenario 1</div>
+      <div class="card-sub" id="sub1"></div>
+    </div>
+    <div class="inputs">
+      <div><div class="field-label">Tipo licencia A</div>
+        <select id="s1_tipoA" onchange="render()" style="border:1.5px solid rgba(27,79,114,.28);background:rgba(27,79,114,.05)">
+          <option>Agency</option><option>Premium</option></select></div>
+      <div><div class="field-label">Tipo licencia B</div>
+        <select id="s1_tipoB" onchange="render()" style="border:1.5px solid rgba(27,79,114,.28);background:rgba(27,79,114,.05)">
+          <option>Agency</option><option selected>Premium</option><option>Ninguna</option></select></div>
+      <div class="field-row">
+        <div><div class="field-label">Cant. A</div>
+          <input type="number" id="s1_qtyA" value="7" min="0" max="500" onchange="render()" style="border:1.5px solid rgba(27,79,114,.28);background:rgba(27,79,114,.05)"></div>
+        <div><div class="field-label">Cant. B</div>
+          <input type="number" id="s1_qtyB" value="1" min="0" max="500" onchange="render()" style="border:1.5px solid rgba(27,79,114,.28);background:rgba(27,79,114,.05)"></div>
       </div>
-      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Colapsar menú">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M10 3L5 8l5 5"/></svg>
-      </button>
+      <div><div class="field-label">Contrato</div>
+        <select id="s1_contrato" onchange="render()" style="border:1.5px solid rgba(27,79,114,.28);background:rgba(27,79,114,.05)">
+          <option>Mensual</option><option>Trimestral</option><option>Semestral</option><option selected>Anual</option></select></div>
+      <div><div class="field-label">Acuerdo</div>
+        <select id="s1_acuerdo" onchange="render()" style="border:1.5px solid rgba(27,79,114,.28);background:rgba(27,79,114,.05)">
+          <option selected>No</option><option>REMAX</option><option>KW</option><option>E&amp;V</option></select></div>
+    </div>
+    <div class="div"></div>
+    <div class="detail" id="detail1"></div>
+    <div class="div"></div>
+    <div class="detail" id="subtotals1"></div>
+    <div class="total-box" style="background:#1b4f72">
+      <span class="total-lbl">TOTAL</span><span class="total-val" id="total1">—</span>
     </div>
   </div>
-  <div class="nav">
-    <div class="nav-label">Vistas</div>
-    <div class="nav-item active" onclick="showPage('resumen')">
-      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-      <span class="nav-text">Resumen general</span>
+
+  <!-- Escenario 2 -->
+  <div class="card" id="card2" style="border:2px solid rgba(20,90,50,.22)">
+    <div class="card-header" style="background:#145a32">
+      <div class="card-title">Escenario 2</div>
+      <div class="card-sub" id="sub2"></div>
     </div>
-    <div class="nav-item" onclick="showPage('ae')">
-      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="4" r="3"/><path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
-      <span class="nav-text">Por AE</span>
+    <div class="inputs">
+      <div><div class="field-label">Tipo licencia A</div>
+        <select id="s2_tipoA" onchange="render()" style="border:1.5px solid rgba(20,90,50,.28);background:rgba(20,90,50,.05)">
+          <option>Agency</option><option>Premium</option></select></div>
+      <div><div class="field-label">Tipo licencia B</div>
+        <select id="s2_tipoB" onchange="render()" style="border:1.5px solid rgba(20,90,50,.28);background:rgba(20,90,50,.05)">
+          <option>Agency</option><option selected>Premium</option><option>Ninguna</option></select></div>
+      <div class="field-row">
+        <div><div class="field-label">Cant. A</div>
+          <input type="number" id="s2_qtyA" value="10" min="0" max="500" onchange="render()" style="border:1.5px solid rgba(20,90,50,.28);background:rgba(20,90,50,.05)"></div>
+        <div><div class="field-label">Cant. B</div>
+          <input type="number" id="s2_qtyB" value="1" min="0" max="500" onchange="render()" style="border:1.5px solid rgba(20,90,50,.28);background:rgba(20,90,50,.05)"></div>
+      </div>
+      <div><div class="field-label">Contrato</div>
+        <select id="s2_contrato" onchange="render()" style="border:1.5px solid rgba(20,90,50,.28);background:rgba(20,90,50,.05)">
+          <option>Mensual</option><option>Trimestral</option><option>Semestral</option><option selected>Anual</option></select></div>
+      <div><div class="field-label">Acuerdo</div>
+        <select id="s2_acuerdo" onchange="render()" style="border:1.5px solid rgba(20,90,50,.28);background:rgba(20,90,50,.05)">
+          <option selected>No</option><option>REMAX</option><option>KW</option><option>E&amp;V</option></select></div>
     </div>
-    <div class="nav-item" onclick="showPage('locales')">
-      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="6" width="14" height="9" rx="1"/><path d="M5 6V4a3 3 0 016 0v2"/></svg>
-      <span class="nav-text">Locales y equipo</span>
-    </div>
-    <div class="nav-item" onclick="showPage('brokers')">
-      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="2.5"/><circle cx="11" cy="4" r="2.5"/><path d="M0 13c0-2.8 2.2-5 5-5h.5M16 13c0-2.8-2.2-5-5-5h-.5"/><path d="M8 8a4 4 0 014 4H4a4 4 0 014-4z"/></svg>
-      <span class="nav-text">Brokers</span>
-    </div>
-    <div class="nav-sep"></div>
-    <div class="nav-label">Sistema</div>
-    <div class="nav-item" onclick="showPage('admin')">
-      <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 2.5 3-.5-1 2.8 2 2.2-3 .5-.5 3-2-2-2 2-.5-3-3-.5 2-2.2-1-2.8 3 .5z"/><circle cx="8" cy="8" r="1.5" fill="currentColor" opacity=".4"/></svg>
-      <span class="nav-text">Datos y archivos</span>
+    <div class="div"></div>
+    <div class="detail" id="detail2"></div>
+    <div class="div"></div>
+    <div class="detail" id="subtotals2"></div>
+    <div class="total-box" style="background:#145a32">
+      <span class="total-lbl">TOTAL</span><span class="total-val" id="total2">—</span>
     </div>
   </div>
-  <div class="sidebar-bottom" id="sidebar-count">179 locales</div>
+
+  <!-- Variable -->
+  <div class="card" id="cardVar" style="display:none;border:2px solid rgba(108,52,131,.22)">
+    <div class="card-header" style="background:#6c3483">
+      <div class="card-title">Variable</div>
+      <div class="card-sub">Escenario 1 − Escenario 2</div>
+    </div>
+    <div class="legend">
+      <span class="diff-green">Verde</span> = Esc. 1 más barato &nbsp;·&nbsp;
+      <span class="diff-red">Rojo</span> = Esc. 1 más caro
+    </div>
+    <div class="compare-fields" id="varFields"></div>
+    <div class="div"></div>
+    <div class="detail" id="varDetail"></div>
+    <div class="total-box" style="background:#6c3483">
+      <span class="total-lbl">DIFERENCIA TOTAL</span>
+      <span class="total-val" id="totalVar">—</span>
+    </div>
+  </div>
 </div>
 
-<!-- Main -->
-<div class="main">
+<div class="footer-note">Precios en € sin IVA &nbsp;·&nbsp; IVA 21% incluido en TOTAL &nbsp;·&nbsp; Trimestral = precio/lic × qty × 3 meses &nbsp;·&nbsp; Semestral × 6 &nbsp;·&nbsp; Anual × 12</div>
 
-<!-- PAGE: Resumen -->
-<div class="page active" id="page-resumen">
-  <div class="page-title">Resumen general</div>
-  <div class="page-sub">Vista consolidada de todas las cuentas</div>
-  <div id="resumen-content"></div>
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="tarifas-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">✏️ Editar Tarifas</div>
+        <div class="panel-sub">Cambios aplicados al instante · Guardados automáticamente en este dispositivo</div>
+      </div>
+      <button class="btn-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-stripe"></div>
+    <div class="panel-body" id="panelBody"></div>
+    <div class="panel-footer">
+      <span class="save-hint">💾 Guardado en tu navegador</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn-secondary" onclick="resetTarifas()">↺ Restaurar originales</button>
+        <button class="btn-primary" onclick="closePanel()">Cerrar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- PAGE: Por AE -->
-<div class="page" id="page-ae">
-  <div class="page-title">Por AE</div>
-  <div class="page-sub">Cuentas activas y estado de contacto por Account Executive</div>
-  <div id="ae-content"></div>
-</div>
-
-<!-- PAGE: Locales -->
-<div class="page" id="page-locales">
-  <div class="page-title">Locales y equipo</div>
-  <div class="page-sub">Detalle de oficinas, equipo y seguimiento de contacto</div>
-  <select id="sel-locales" onchange="renderLocales(this.value)">
-    <option value="">Selecciona un AE...</option>
-  </select>
-  <div id="locales-content"></div>
-</div>
-
-<!-- PAGE: Brokers -->
-<div class="page" id="page-brokers">
-  <div class="page-title">Brokers</div>
-  <div class="page-sub">Contacto directo con brokers por AE y local</div>
-  <select id="sel-brokers" onchange="renderBrokers(this.value)">
-    <option value="">Selecciona un AE...</option>
-  </select>
-  <div id="brokers-content"></div>
-</div>
-
-<!-- PAGE: Admin -->
-<div class="page" id="page-admin">
-  <div class="page-title">Datos y archivos</div>
-  <div class="page-sub">Carga o actualiza los tres archivos base del sistema</div>
-  <div id="admin-content"></div>
-</div>
-
-</div><!-- /main -->
-</div><!-- /app -->
+<div class="toast" id="toast">✓ Tarifa actualizada</div>
 
 <script>
-const SEED = [{"oficina":"AGORA","ae":"JUAN","status":"ONGOING","ciudad":"COLLADO VILLALBA","provincia":"MADRID","zona":"Madrid","telefono":"918407383","email":"agora@remax.es","direccion":"C/ Honorio Lozano, 29","agentes":9,"brokers":1,"managers":2,"coordinadores":2,"broker_list":[{"nombre":"Belen Cordoba De Oya","email":"belen.cordoba@remax.es","movil":"918407383"}]},{"oficina":"ARENA","ae":"JUAN","status":"ONGOING","ciudad":"GANDIA","provincia":"VALENCIA","zona":"Levante","telefono":"963833582","email":"arena@remax.es","direccion":"Pº Germanías, 81","agentes":20,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Lisardo Marin","email":"lisardo.marin@remax.es","movil":"607 67 03 20"}]},{"oficina":"MOLGAR","ae":"JUAN","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"","email":"molgar@remax.es","direccion":"C/ Monasterio de Arlanza,","agentes":6,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Eduardo Rico Brusi","email":"eduardo.rico@remax.es","movil":"644463528"},{"nombre":"Laura Molpeceres Gomez","email":"laura.molpeceres@remax.es","movil":"633474091"}]},{"oficina":"ALBA","ae":"LAIA","status":"ONGOING","ciudad":"TORREVIEJA","provincia":"ALICANTE","zona":"Levante","telefono":"625986688","email":"alba@remax.es","direccion":"C/ Bergantín, 24","agentes":20,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Viktor Muntian","email":"viktor.muntian@remax.es","movil":"611327665"}]},{"oficina":"AMANECER","ae":"LAIA","status":"ONGOING","ciudad":"DENIA","provincia":"ALICANTE","zona":"Levante","telefono":"636389088","email":"amanecer@remax.es","direccion":"C/ Las Marinas, 9","agentes":18,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jonathan Bano Orbezo","email":"jonathan.bano@remax.es","movil":"680524118"}]},{"oficina":"AQUA","ae":"LAIA","status":"ONGOING","ciudad":"PUERTO DEL ROSARIO","provincia":"LAS PALMAS","zona":"Canarias","telefono":"928297063","email":"aqua@remax.es","direccion":"C/ Secundino Alonso, 98 ","agentes":7,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"David Cardenes Cabrera","email":"david.cardenes@remax.es","movil":" 652016221"},{"nombre":"Gema M Falcon Arencibia","email":"gema.falcon@remax.es","movil":"652016221"}]},{"oficina":"AURA","ae":"LAIA","status":"ONGOING","ciudad":"ARTA","provincia":"BALEARES","zona":"Baleares","telefono":"636826461","email":"aura@remax.es","direccion":"Carrer d'Antoni Bl","agentes":6,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ladislav Oczeljak","email":"ladislav.oczeljak@remax.es","movil":"636826461"},{"nombre":"Victoria Vaquer Adrover","email":"victoria.vaquer@remax.es","movil":"699909112"}]},{"oficina":"BELLA","ae":"LAIA","status":"ONGOING","ciudad":"MARBELLA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"951332464","email":"bella@remax.es","direccion":"C/ Notario Luis Oliver 2, 6º B","agentes":7,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Veronica Gomezdesalazar","email":"veronica.gomezdesalazar@remax.es","movil":"670702127"}]},{"oficina":"BRISA","ae":"LAIA","status":"ONGOING","ciudad":"TORRE DEL MAR","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"951018164","email":"brisa@remax.es","direccion":"Av. de Andalucía, 76","agentes":1,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Cristina Vega Lopez","email":"cristina.vega@remax.es","movil":"637317229"},{"nombre":"David Santiago Segovia","email":"david.santiago@remax.es","movil":"607839033"}]},{"oficina":"CENIT","ae":"LAIA","status":"ONGOING","ciudad":"SEVILLA","provincia":"SEVILLA","zona":"Andalucía y Extremadura","telefono":"854725332","email":"cenit@remax.es","direccion":"C/ Doctor González Carballo, 1","agentes":3,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Monica Ramirez Garcia","email":"monica.ramirez@remax.es","movil":"658645762"}]},{"oficina":"COLLECTION PRIME","ae":"LAIA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"913898527","email":"collectionprime@remax.es","direccion":"C/Hermosilla , 64 ","agentes":3,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Manuela Ramirez Corpas","email":"manuela.ramirez@remax.es","movil":"616776459"},{"nombre":"Paz Ramirez Corpas","email":"paz.ramirez@remax.es","movil":"616776459"}]},{"oficina":"COLLECTION SOTOGRAND","ae":"LAIA","status":"ONGOING","ciudad":"SOTOGRANDE","provincia":"CADIZ","zona":"Andalucía y Extremadura","telefono":"+34 956 795 010","email":"collectionsotogrande@remax.es","direccion":"C/ Dulcinea, 29","agentes":6,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Araceli Gavira Rodriguez","email":"araceli.gavira@remax.es","movil":"691447827"}]},{"oficina":"CONCEPT","ae":"LAIA","status":"ONGOING","ciudad":"SANXENXO","provincia":"PONTEVEDRA","zona":"Norte y Centro","telefono":"","email":"concept@remax.es","direccion":"PEDIENTE UBICACION","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jorge Seguin Sanchez","email":"jorge.seguin@remax.es","movil":"604039755"}]},{"oficina":"CONCORDE","ae":"LAIA","status":"ONGOING","ciudad":"SAN JUAN","provincia":"ALICANTE","zona":"Levante","telefono":"626786652","email":"concorde@remax.es","direccion":"Av. Costablanca, 16 local 2º","agentes":2,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Javier Peralta Merin","email":"javier.peralta@remax.es","movil":" 626786652"},{"nombre":"Marife Hernandez Diaz","email":"marife.hernandez@remax.es","movil":"639629930"}]},{"oficina":"CONY OVERSEAS","ae":"LAIA","status":"ONGOING","ciudad":"LAS PALMAS DE GRAN CANARIA","provincia":"LAS PALMAS","zona":"Canarias","telefono":"619250498","email":"conyoverseas@remax.es","direccion":"C/ General Vives, 51 - bajo","agentes":18,"brokers":3,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Alejandro Zwanck","email":"alejandro.zwanck@remax.es","movil":"619250498"},{"nombre":"Andrea Zwanck","email":"andrea.zwanck@remax.es","movil":" 928220600"},{"nombre":"Olga Mora Moyano","email":"olga.mora@remax.es","movil":"639826560"}]},{"oficina":"CORE","ae":"LAIA","status":"ONGOING","ciudad":"BADAJOZ","provincia":"BADAJOZ","zona":"Andalucía y Extremadura","telefono":"924964806","email":"core@remax.es","direccion":"Avda Juan Pereda Pila, 5","agentes":14,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Antonio Prieto Castano","email":"antonio.prietocastano@remax.es","movil":"684 72 76 90"},{"nombre":"Antonio Prieto Molano","email":"antonio.prieto@remax.es","movil":"694 25 36 32"}]},{"oficina":"EXPERTS","ae":"LAIA","status":"ONGOING","ciudad":"PONFERRADA","provincia":"LEON","zona":"Norte y Centro","telefono":"987413906","email":"experts@remax.es","direccion":"Av. Compostilla, 10","agentes":3,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jose Antonio Rodriguez Blanco","email":"joseantonio.rodriguez@remax.es","movil":"620681900"}]},{"oficina":"FINCA HOGAR","ae":"LAIA","status":"ONGOING","ciudad":"ZARAGOZA","provincia":"ZARAGOZA","zona":"Cataluña y Aragón","telefono":"876652651","email":"fincahogar@remax.es","direccion":"Pº de Sagasta, 80","agentes":24,"brokers":2,"managers":0,"coordinadores":5,"broker_list":[{"nombre":"Fernando Pezonaga Guijarro","email":"fernando.pezonaga@remax.es","movil":"663634125"},{"nombre":"Victor Pezonaga Guijarro","email":"victor.pezonaga@remax.es","movil":" 678270622"}]},{"oficina":"FUTURE","ae":"LAIA","status":"ONGOING","ciudad":"GETAFE","provincia":"MADRID","zona":"Madrid","telefono":"692815555","email":"future@remax.es","direccion":"C/ Carabanchel, 3","agentes":2,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Daniel Poyatos Infante","email":"daniel.poyatos@remax.es","movil":"695202274"}]},{"oficina":"GENTILE HOME","ae":"LAIA","status":"ONGOING","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":12,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Eduardo Bonet Martinez","email":"eduardo.bonet@remax.es","movil":"913430876"}]},{"oficina":"GLORIETA","ae":"LAIA","status":"ONGOING","ciudad":"SANTA POLA","provincia":"ALICANTE","zona":"Levante","telefono":"966691515","email":"glorieta@remax.es","direccion":"C/ Poeta Miguel Hernández, 13 ","agentes":18,"brokers":1,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Juan Bautista Marhuenda Irastorza","email":"juanbautista.marhuenda@remax.es","movil":"629611542"}]},{"oficina":"INDALO","ae":"LAIA","status":"ONGOING","ciudad":"ALMERIA","provincia":"ALMERIA","zona":"Andalucía y Extremadura","telefono":"950385687","email":"indalo@remax.es","direccion":"C/ Italia, 7","agentes":8,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Antonio Garcia Lopez","email":"antonio.garcia@remax.es","movil":"667661432"}]},{"oficina":"INFINITY","ae":"LAIA","status":"ONGOING","ciudad":"BENALMADENA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"951576619","email":"infinity@remax.es","direccion":"Carril del Siroco, 8 - local","agentes":20,"brokers":3,"managers":2,"coordinadores":1,"broker_list":[{"nombre":"Francisco Martinez Sediles","email":"francisco.martinez@remax.es","movil":"619 92 05 34"},{"nombre":"Miguel Angel Mattera","email":"miguelangel.mattera@remax.es","movil":"660 45 24 71"},{"nombre":"Valeria Giuliano","email":"valeria.giuliano@remax.es","movil":"639475092"}]},{"oficina":"ISLA DE LA LUZ","ae":"LAIA","status":"ONGOING","ciudad":"O GROVE","provincia":"PONTEVEDRA","zona":"Norte y Centro","telefono":"605324219","email":"isladelaluz@remax.es","direccion":"Aldea Comercial La Toja, ","agentes":4,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Jorge Seguin Sanchez","email":"jorge.seguin@remax.es","movil":"604039755"}]},{"oficina":"JUMBO","ae":"LAIA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915344831","email":"jumbo@remax.es","direccion":"C/ Cea Bermúdez, 10 - entrepla","agentes":80,"brokers":7,"managers":2,"coordinadores":2,"broker_list":[{"nombre":"Alberto Jimenez Sanchez","email":"alberto.jimenez@remax.es","movil":"618110040"},{"nombre":"Anunciacion Jimenez Sanchez","email":"anunciacion.jimenez@remax.es","movil":"690616336"},{"nombre":"Bernar Jimenez Sanchez","email":"bernar.jimenez@remax.es","movil":"698693235"},{"nombre":"Eduvigis Sanchez Sanz","email":"eduvigis.sanchez@remax.es","movil":"915344831"},{"nombre":"Estefania Jimenez Sanchez","email":"estefania.jimenez@remax.es","movil":" 629350999"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"},{"nombre":"Myriam Jimenez Sanchez","email":"myriam.jimenez@remax.es","movil":"606970657"}]},{"oficina":"JUMBO EXCLUSIVE","ae":"LAIA","status":"ONGOING","ciudad":"LAS ROZAS","provincia":"MADRID","zona":"Madrid","telefono":"915555405","email":"jumboexclusive@remax.es","direccion":"Av. de Atenas, 1-3. Local 163","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Bernar Jimenez Sanchez","email":"bernar.jimenez@remax.es","movil":"698693235"}]},{"oficina":"JUMBO MAR","ae":"LAIA","status":"ONGOING","ciudad":"BARCELONA","provincia":"BARCELONA","zona":"Cataluña y Aragón","telefono":"936394509","email":"jumbomar@remax.es","direccion":"Ronda General Mitre, 215-217","agentes":25,"brokers":3,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Bernar Jimenez Sanchez","email":"bernar.jimenez@remax.es","movil":"698693235"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"},{"nombre":"Myriam Jimenez Sanchez","email":"myriam.jimenez@remax.es","movil":"606970657"}]},{"oficina":"JUMBO MAR II","ae":"LAIA","status":"ONGOING","ciudad":"FIGUERAS","provincia":"GERONA","zona":"Cataluña y Aragón","telefono":"936394509","email":"jumbomar2@remax.es","direccion":"C/ Pere Serás Isern, 1 (local)","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Bernar Jimenez Sanchez","email":"bernar.jimenez@remax.es","movil":"698693235"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"}]},{"oficina":"JUMBO PUNTO CERO","ae":"LAIA","status":"ONGOING","ciudad":"MAJADAHONDA","provincia":"MADRID","zona":"Madrid","telefono":"916398570","email":"jumbopuntocero@remax.es","direccion":"C/ Doctor Calero, 2 - bajo - l","agentes":24,"brokers":3,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Bernar Jimenez Sanchez","email":"bernar.jimenez@remax.es","movil":"698693235"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"},{"nombre":"Myriam Jimenez Sanchez","email":"myriam.jimenez@remax.es","movil":"606970657"}]},{"oficina":"LAND","ae":"LAIA","status":"ONGOING","ciudad":"SA POBLA/LA POBLA","provincia":"BALEARES","zona":"Baleares","telefono":"692472621","email":"land@remax.es","direccion":"Pl- Major, 4 - 1º","agentes":5,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Juan Antonio Roy Nadal","email":"juanantonio.roy@remax.es","movil":"625467680"}]},{"oficina":"MAGIC","ae":"LAIA","status":"ONGOING","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"871735818","email":"magic@remax.es","direccion":"C/ Dragonera, 19","agentes":8,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Damian Victor Diaz Palermo","email":"damian.diaz@remax.es","movil":" 607356843"},{"nombre":"Juan Liska","email":"juan.liska@remax.es","movil":" 661140969"}]},{"oficina":"MASTERS GROUP","ae":"LAIA","status":"ONGOING","ciudad":"PAMPLONA","provincia":"NAVARRA","zona":"Norte y Centro","telefono":"948115850","email":"mastersgroup@remax.es","direccion":"C/ Julián Arteaga, 6","agentes":7,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Juan Jose Sagues Del Castillo","email":"juanjose.sagues@remax.es","movil":"646956604"}]},{"oficina":"NEXO","ae":"LAIA","status":"ONGOING","ciudad":"VALLADOLID","provincia":"VALLADOLID","zona":"Norte y Centro","telefono":"680446962","email":"nexo@remax.es","direccion":"Pl. Juan de Austria, 1","agentes":13,"brokers":1,"managers":0,"coordinadores":3,"broker_list":[{"nombre":"Guillermo Del Barrio De La Ros","email":"guillermo.delbarrio@remax.es","movil":"680446962"}]},{"oficina":"PISUERGA","ae":"LAIA","status":"ONGOING","ciudad":"VALLADOLID","provincia":"VALLADOLID","zona":"Norte y Centro","telefono":"983334100","email":"pisuerga@remax.es","direccion":"C/ Poniente, 6","agentes":34,"brokers":2,"managers":0,"coordinadores":3,"broker_list":[{"nombre":"Guillermo Del Barrio De La Ros","email":"guillermo.delbarrio@remax.es","movil":"680446962"},{"nombre":"M De Las Mercedes Del Barrio De La Ros","email":"mercedes.delbarrio@remax.es","movil":"630084319"}]},{"oficina":"PISUERGA II","ae":"LAIA","status":"ONGOING","ciudad":"LAGUNA DE DUERO","provincia":"VALLADOLID","zona":"Norte y Centro","telefono":"983526884","email":"pisuerga@remax.es","direccion":"Av. El Estadio, 19","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Guillermo Del Barrio De La Ros","email":"guillermo.delbarrio@remax.es","movil":"680446962"},{"nombre":"M De Las Mercedes Del Barrio De La Ros","email":"mercedes.delbarrio@remax.es","movil":"630084319"}]},{"oficina":"PLAYA","ae":"LAIA","status":"ONGOING","ciudad":"VERA","provincia":"ALMERIA","zona":"Andalucía y Extremadura","telefono":"950617214","email":"playa@remax.es","direccion":"C.C. Hispania local bajo 1","agentes":13,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Carlos Dot Saldana","email":"carlos.dot@remax.es","movil":" 669827657"}]},{"oficina":"PORTICO","ae":"LAIA","status":"ONGOING","ciudad":"BENIDORM","provincia":"ALICANTE","zona":"Levante","telefono":"965749085","email":"portico@remax.es","direccion":"Av. Bilbao, 4 - local 6","agentes":4,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Fernando Del Pueyo","email":"fernando.delpueyo@remax.es","movil":"698080060"},{"nombre":"Svetlana Garkavenko","email":"s.garkavenko@remax.es","movil":"698080060"}]},{"oficina":"SOL","ae":"LAIA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"919950506","email":"sol@remax.es","direccion":"C/ Melchor Fernández de ","agentes":2,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Solmaz Salehazimi","email":"solmaz.azimi@remax.es","movil":"611650712"}]},{"oficina":"SOLUCION","ae":"LAIA","status":"ONGOING","ciudad":"ROQUETAS DE MAR","provincia":"ALMERIA","zona":"Andalucía y Extremadura","telefono":"950321992","email":"solucion@remax.es","direccion":"Crtra. Alicun, 28","agentes":10,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Alberto Alarcon Aguirre","email":"alberto.alarcon@remax.es","movil":"662257024"}]},{"oficina":"SOLUCION II","ae":"LAIA","status":"ONGOING","ciudad":"ALMERIA","provincia":"ALMERIA","zona":"Andalucía y Extremadura","telefono":"950520189","email":"solucion@remax.es","direccion":"Av.de Cabo de Gata , 33","agentes":8,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Alberto Alarcon Aguirre","email":"alberto.alarcon@remax.es","movil":"662257024"}]},{"oficina":"TREBOL","ae":"LAIA","status":"ONGOING","ciudad":"OVIEDO","provincia":"ASTURIAS","zona":"Norte y Centro","telefono":"984055314","email":"trebol@remax.es","direccion":"C/ Alejandro Casona, 31","agentes":4,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Cristina Lopez Jimenez","email":"cris.lopez@remax.es","movil":"644123615"},{"nombre":"Mario Rodriguez San Antonio","email":"mario.rodriguez@remax.es","movil":"675341028"}]},{"oficina":"VEGA","ae":"LAIA","status":"ONGOING","ciudad":"TORRELAVEGA","provincia":"CANTABRIA","zona":"Norte y Centro","telefono":"942227377","email":"vega@remax.es","direccion":"C/ Hermilio Alcalde del","agentes":0,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Luis Garcia Vinas","email":"luis.garciavinas@remax.es","movil":"606309670"}]},{"oficina":"VERTICE","ae":"LAIA","status":"ONGOING","ciudad":"SANTANDER","provincia":"CANTABRIA","zona":"Norte y Centro","telefono":"942022156","email":"vertice@remax.es","direccion":"C/ José Hierro, 26","agentes":25,"brokers":3,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Guillermo Del Barrio De La Ros","email":"guillermo.delbarrio@remax.es","movil":"680446962"},{"nombre":"Jessica Postor Basalo","email":"jessica.postor@remax.es","movil":" 626603936"},{"nombre":"Jairo Robles Rodriguez","email":"jairo.robles@remax.es","movil":" 652938201"}]},{"oficina":"VICUS","ae":"LAIA","status":"ONGOING","ciudad":"VIGO","provincia":"PONTEVEDRA","zona":"Norte y Centro","telefono":"666127259","email":"vicus@remax.es","direccion":"C/ de Alvaro Cunqueiro, 1 bajo","agentes":5,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Alejandro Gonzalez Suarez","email":"alejandro.gonzalez@remax.es","movil":"666127259"},{"nombre":"Alicia Suarez Gonzalez","email":"alicia.suarez@remax.es","movil":"667458986"}]},{"oficina":"VIVEN","ae":"LAIA","status":"ONGOING","ciudad":"VILANOVA I LA GELTRU","provincia":"BARCELONA","zona":"Cataluña y Aragón","telefono":"930267436","email":"viven@remax.es","direccion":"Pelegri Ballester 23 ","agentes":5,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Cesar Sanjurjo Fuertes","email":"cesar.sanjurjo@remax.es","movil":"930267436"}]},{"oficina":"AMBAR","ae":"Sin asignar","status":"LOST","ciudad":"FUENLABRADA","provincia":"MADRID","zona":"Madrid","telefono":"916002090","email":"ambar@remax.es","direccion":"C/ Castilla la Nueva, 28 - ","agentes":2,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Jose Antonio Martin Herrera","email":"joseantonio.martin@remax.es","movil":"670 90 80 12"}]},{"oficina":"ANTARES","ae":"Sin asignar","status":"LOST","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"911996549","email":"antares@remax.es","direccion":"C/ Islas Cíes, 51","agentes":10,"brokers":1,"managers":2,"coordinadores":1,"broker_list":[{"nombre":"Alejandro Albeniz Magallon","email":"alejandro.albenizmagallon@remax.es","movil":" 625553592"}]},{"oficina":"ATLANTIS","ae":"Sin asignar","status":"LOST","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":6,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Moises Palmes Lazaro","email":"moises.palmes@remax.es","movil":"681659277"}]},{"oficina":"AXIS","ae":"Sin asignar","status":"LOST","ciudad":"LAS PALMAS DE GRAN CANARIA","provincia":"LAS PALMAS","zona":"Canarias","telefono":"928933922","email":"axis@remax.es","direccion":"Av. Rafael Cabrera, 24 - ","agentes":18,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Martin Hernandez","email":"martin.hernandez@remax.es","movil":"607531343"}]},{"oficina":"BALAÍDOS","ae":"Sin asignar","status":"LOST","ciudad":"VIGO","provincia":"PONTEVEDRA","zona":"Norte y Centro","telefono":"986137030","email":"balaidos@remax.es","direccion":"C/ Coruña, 24 - bajo","agentes":29,"brokers":1,"managers":0,"coordinadores":3,"broker_list":[{"nombre":"Ines Figueroa Perez","email":"ines.figueroa@remax.es","movil":"986137030"}]},{"oficina":"BEACH HOMES","ae":"Sin asignar","status":"LOST","ciudad":"ORIHUELA COSTA","provincia":"ALICANTE","zona":"Levante","telefono":"966910769","email":"beachhomes@remax.es","direccion":"C/ Abeto, s/n. C.C. Zeniamar","agentes":17,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Jesus Serna Lorente","email":"jesus.serna@remax.es","movil":"600469266"}]},{"oficina":"BLUE","ae":"Sin asignar","status":"LOST","ciudad":"ALICANTE","provincia":"ALICANTE","zona":"Levante","telefono":"966305118","email":"blue@remax.es","direccion":"Av. Condes de Soto Ameno, ","agentes":7,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Pedro Alvado Banon","email":"pedro.alvado@remax.es","movil":"601198650"}]},{"oficina":"BOGA","ae":"Sin asignar","status":"LOST","ciudad":"DONOSTIA - SAN SEBASTIAN","provincia":"GUIPUZCOA","zona":"Norte y Centro","telefono":"943684237","email":"boga@remax.es","direccion":"Pl. Karlos Santamaría, 11","agentes":3,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Pablo J Domench Casado","email":"pabloj.domench@remax.es","movil":"615056269"}]},{"oficina":"BRAVA","ae":"Sin asignar","status":"LOST","ciudad":"ROSES","provincia":"GIRONA","zona":"Cataluña y Aragón","telefono":"972977797","email":"brava@remax.es","direccion":"Av. de Rhode, 95","agentes":5,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Andres Silvestre Corpas","email":"andres.silvestre@remax.es","movil":"+34672141329"}]},{"oficina":"BRAVA G","ae":"Sin asignar","status":"LOST","ciudad":"GIRONA","provincia":"GIRONA","zona":"Cataluña y Aragón","telefono":"972977797","email":"bravag@remax.es","direccion":"Crtra. de Barcelona, 124","agentes":11,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Andres Silvestre Corpas","email":"andres.silvestre@remax.es","movil":"+34672141329"}]},{"oficina":"BUILDING","ae":"Sin asignar","status":"LOST","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"917240976","email":"building@remax.es","direccion":"C/ Padilla, 72","agentes":11,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Javier Borrego Gutierrez","email":"javier.borrego@remax.es","movil":"699900747"}]},{"oficina":"CASAGRANDE","ae":"Sin asignar","status":"LOST","ciudad":"TOMARES","provincia":"SEVILLA","zona":"Andalucía y Extremadura","telefono":"954156595","email":"casagrande@remax.es","direccion":"Alameda Santa Eufemia, nº26 , local","agentes":27,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Rafael Rodriguez Tovar","email":"rafael.rodriguez@remax.es","movil":" 654 392 969"}]},{"oficina":"CONY OVERSEAS","ae":"Sin asignar","status":"LOST","ciudad":"LAS PALMAS DE GRAN CANARIA","provincia":"LAS PALMAS","zona":"Canarias","telefono":"619250498","email":"conyoverseas@remax.es","direccion":"C/ General Vives, 51 - bajo","agentes":18,"brokers":3,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Alejandro Zwanck","email":"alejandro.zwanck@remax.es","movil":"619250498"},{"nombre":"Andrea Zwanck","email":"andrea.zwanck@remax.es","movil":" 928220600"},{"nombre":"Olga Mora Moyano","email":"olga.mora@remax.es","movil":"639826560"}]},{"oficina":"EXCLUSIVE","ae":"Sin asignar","status":"LOST","ciudad":"SES SALINES/LES SALINES","provincia":"BALEARES","zona":"Baleares","telefono":"","email":"exclusive@remax.es","direccion":"C/ Batle Andreu ","agentes":2,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Juan Jose Bonet Vidal","email":"juan.bonet@remax.es","movil":"630554668"}]},{"oficina":"EXPERIENCE","ae":"Sin asignar","status":"LOST","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"871853053","email":"experience@remax.es","direccion":"C/ Gilabert de Centelles, 8 ","agentes":12,"brokers":2,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Beatriz Vilas Garro","email":"beatriz.vilas@remax.es","movil":"609464459"},{"nombre":"Juan Mayol Morey","email":"juan.mayol@remax.es","movil":" 619231272"}]},{"oficina":"HABITAT","ae":"Sin asignar","status":"LOST","ciudad":"OURENSE","provincia":"ORENSE","zona":"Norte y Centro","telefono":"988105787","email":"habitat@remax.es","direccion":"Av. Buenos Aires, 14","agentes":3,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Adriana Lopez Gonzalez","email":"adriana.lopez@remax.es","movil":"661240810"}]},{"oficina":"HORIZON","ae":"Sin asignar","status":"LOST","ciudad":"LAS ROZAS","provincia":"MADRID","zona":"Madrid","telefono":"918371598","email":"horizon@remax.es","direccion":"C/ Real, 15","agentes":10,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Bego Sanchez Jimenez","email":"bego.sanchez@remax.es","movil":"918371598"},{"nombre":"Carlos Sanchez Jimenez","email":"carlos.sanchez@remax.es","movil":"609718311"}]},{"oficina":"LAND","ae":"Sin asignar","status":"LOST","ciudad":"SA POBLA/LA POBLA","provincia":"BALEARES","zona":"Baleares","telefono":"692472621","email":"land@remax.es","direccion":"Pl- Major, 4 - 1º","agentes":5,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Juan Antonio Roy Nadal","email":"juanantonio.roy@remax.es","movil":"625467680"}]},{"oficina":"OLID","ae":"Sin asignar","status":"LOST","ciudad":"VALLADOLID","provincia":"VALLADOLID","zona":"Norte y Centro","telefono":"983 04 06 09","email":"olid@remax.es","direccion":"C/ Mantilla 2A, planta 1ª","agentes":23,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Juan Jose Crespo Alonso","email":"juanjose.crespo@remax.es","movil":"657054806"}]},{"oficina":"PENDIENTE NOMBRE","ae":"Sin asignar","status":"LOST","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jose Martinez Sanchez","email":"jose.martinez@remax.es","movil":"647 861 968"}]},{"oficina":"PLAZA","ae":"Sin asignar","status":"LOST","ciudad":"VALENCIA","provincia":"VALENCIA","zona":"Levante","telefono":"963313229","email":"plaza@remax.es","direccion":"Avenida Marqués de Sotelo 5, ","agentes":17,"brokers":4,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Cesar Buj Romero","email":"cesar.buj@remax.es","movil":"616655936"},{"nombre":"Isabel Romero Buil","email":"isabel.romero@remax.es","movil":"607316000"},{"nombre":"Sara Monrabal Lopez","email":"sara.monrabal@remax.es","movil":"611711393"},{"nombre":"Tadeo Puchol Ballester","email":"tadeo.puchol@remax.es","movil":"657813217"}]},{"oficina":"PROPERTIES","ae":"Sin asignar","status":"LOST","ciudad":"POZUELO DE ALARCÓN","provincia":"MADRID","zona":"Madrid","telefono":"916216689","email":"properties@remax.es","direccion":"Pl. del Gobernador, s/n","agentes":33,"brokers":1,"managers":3,"coordinadores":4,"broker_list":[{"nombre":"Jorge Queipo","email":"jorge.queipo@remax.es","movil":"649974983"}]},{"oficina":"ROYAL","ae":"Sin asignar","status":"LOST","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"971896123","email":"royal@remax.es","direccion":"C/ Andrea Doria, 48 bajo A","agentes":5,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Mateu Julia Serra","email":"mateu.julia@remax.es","movil":" 620714797"}]},{"oficina":"UP","ae":"Sin asignar","status":"LOST","ciudad":"LAS ROZAS (MADRID)","provincia":"MADRID","zona":"Madrid","telefono":"915124514","email":"up@remax.es","direccion":"C/ Módena, 43","agentes":13,"brokers":2,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Jose Manuel Rico Jimenez","email":"josemanuel.rico@remax.es","movil":"618961601"},{"nombre":"Maria Jose Jimenez Rufian","email":"mariajose.jimenez@remax.es","movil":"638 591 302"}]},{"oficina":"VINCI GROUP","ae":"Sin asignar","status":"LOST","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"971208419","email":"vincigroup@remax.es","direccion":"Av. Gabriel Alomar I ","agentes":3,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Alessandro Vinciguerra","email":"alessandro.vinciguerra@remax.es","movil":"639373029"},{"nombre":"Paola Lopez Agudelo","email":"paola.lopez@remax.es","movil":"683500434"}]},{"oficina":"VIVEN","ae":"Sin asignar","status":"LOST","ciudad":"VILANOVA I LA GELTRU","provincia":"BARCELONA","zona":"Cataluña y Aragón","telefono":"930267436","email":"viven@remax.es","direccion":"Pelegri Ballester 23 ","agentes":5,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Cesar Sanjurjo Fuertes","email":"cesar.sanjurjo@remax.es","movil":"930267436"}]},{"oficina":"ABILITY","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915178159","email":"ability@remax.es","direccion":"Pº de los Pontones, 11 - bis local","agentes":7,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Manuel Domingo Jimenez Herrero","email":"manuel.jimenez@remax.es","movil":"915178159"}]},{"oficina":"ACTIVO RESIDENCIAL","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915138603","email":"activoresidencial@remax.es","direccion":"C/ Velázquez, 104","agentes":12,"brokers":1,"managers":2,"coordinadores":3,"broker_list":[{"nombre":"Santiago De Mora Narvaez","email":"santiago.demora@remax.es","movil":" 607509026"}]},{"oficina":"AGUA SALADA","ae":"RAISA","status":"ONGOING","ciudad":"REOCIN","provincia":"CANTABRIA","zona":"Norte y Centro","telefono":"942490000","email":"aguasalada@remax.es","direccion":"C/ Peñía, 8","agentes":6,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jose Manuel Vigo Calle","email":"josemanuel.vigo@remax.es","movil":"+34640746404"}]},{"oficina":"ATICA","ae":"RAISA","status":"ONGOING","ciudad":"SEVILLA","provincia":"SEVILLA","zona":"Andalucía y Extremadura","telefono":"699679531","email":"atica@remax.es","direccion":"C/ Virgen de Luján, 39 A Local","agentes":23,"brokers":2,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Borja Pascual Sanchez","email":"borja.pascual@remax.es","movil":"606453453"},{"nombre":"Patricia Rodriguez Bermejo","email":"patricia.rodriguez@remax.es","movil":"649334983"}]},{"oficina":"ATICA COSTA","ae":"RAISA","status":"ONGOING","ciudad":"HUELVA","provincia":"HUELVA","zona":"Andalucía y Extremadura","telefono":"606453453","email":"aticacosta@remax.es","direccion":"C/ Fernando el Católico, 11","agentes":10,"brokers":2,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Borja Pascual Sanchez","email":"borja.pascual@remax.es","movil":"606453453"},{"nombre":"Patricia Rodriguez Bermejo","email":"patricia.rodriguez@remax.es","movil":"649334983"}]},{"oficina":"ATLANTIS","ae":"RAISA","status":"ONGOING","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":6,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Moises Palmes Lazaro","email":"moises.palmes@remax.es","movil":"681659277"}]},{"oficina":"BEACH HOMES","ae":"RAISA","status":"ONGOING","ciudad":"ORIHUELA COSTA","provincia":"ALICANTE","zona":"Levante","telefono":"966910769","email":"beachhomes@remax.es","direccion":"C/ Abeto, s/n. C.C. Zeniamar","agentes":17,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Jesus Serna Lorente","email":"jesus.serna@remax.es","movil":"600469266"}]},{"oficina":"BLUE","ae":"RAISA","status":"ONGOING","ciudad":"ALICANTE","provincia":"ALICANTE","zona":"Levante","telefono":"966305118","email":"blue@remax.es","direccion":"Av. Condes de Soto Ameno, ","agentes":7,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Pedro Alvado Banon","email":"pedro.alvado@remax.es","movil":"601198650"}]},{"oficina":"CALM","ae":"RAISA","status":"ONGOING","ciudad":"POLLENCA","provincia":"BALEARES","zona":"Baleares","telefono":"971536335","email":"calm@remax.es","direccion":"C/ Alcudia, 2","agentes":11,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Guillem Borras Marques","email":"guillem.borras@remax.es","movil":" 649815489"},{"nombre":"Maria Del Carme Garcia Ballester","email":"carme.garcia@remax.es","movil":"649010874"}]},{"oficina":"CENTRAL","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"913571244","email":"central@remax.es","direccion":"C/ Estudio, 3","agentes":7,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Javier Ochoa","email":"javier.ochoa@remax.es","movil":"630101638"}]},{"oficina":"CIMA","ae":"RAISA","status":"ONGOING","ciudad":"GRANADA","provincia":"GRANADA","zona":"Andalucía y Extremadura","telefono":"958014149","email":"cima@remax.es","direccion":"C/ Pedro Antonio de Alarcón, ","agentes":46,"brokers":1,"managers":4,"coordinadores":2,"broker_list":[{"nombre":"Felix Mensah Donkor","email":"felix.mensah@remax.es","movil":"675610290"}]},{"oficina":"CIMA II","ae":"RAISA","status":"ONGOING","ciudad":"GRANADA","provincia":"GRANADA","zona":"Andalucía y Extremadura","telefono":"618144438","email":" ","direccion":"c/ Ribera del Violón 12","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Felix Mensah Donkor","email":"felix.mensah@remax.es","movil":"675610290"}]},{"oficina":"COAST","ae":"RAISA","status":"ONGOING","ciudad":"MÁLAGA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"952423602","email":"coast@remax.es","direccion":"Pasillo de Santa Isabel, 2","agentes":23,"brokers":2,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Francisco Arijo Alvarez","email":"francisco.arijo@remax.es","movil":"650914867"},{"nombre":"Luis Camas Jimena","email":"luis.camas@remax.es","movil":" 650914866"}]},{"oficina":"COAST II","ae":"RAISA","status":"ONGOING","ciudad":"MANILVA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"681032547","email":"coast2@remax.es","direccion":"Urb. Bahía Dorada, entrada 5","agentes":1,"brokers":3,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Cristian Maffione","email":"cristian.maffione@remax.es","movil":"681032547"},{"nombre":"Francisco Arijo Alvarez","email":"francisco.arijo@remax.es","movil":"650914867"},{"nombre":"Luis Camas Jimena","email":"luis.camas@remax.es","movil":" 650914866"}]},{"oficina":"FIDELITY","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"910413346","email":"fidelity@remax.es","direccion":"C/ Alcalde de Sainz de ","agentes":20,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Isabel Merida Del Olmo","email":"isabel.merida@remax.es","movil":"910413346"}]},{"oficina":"FINANBANK","ae":"RAISA","status":"ONGOING","ciudad":"BORMUJOS","provincia":"SEVILLA","zona":"Andalucía y Extremadura","telefono":"954856651","email":"finanbank@remax.es","direccion":"Av. Universidad de ","agentes":9,"brokers":2,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Juan Antonio Martin Diaz","email":"juanantonio.martin@remax.es","movil":"650498971"},{"nombre":"Roberto Ron Barragan","email":"roberto.ron@remax.es","movil":"650758580"}]},{"oficina":"GALERA","ae":"RAISA","status":"ONGOING","ciudad":"MOLINA DE SEGURA","provincia":"MURCIA","zona":"Levante","telefono":"968755946","email":"galera@remax.es","direccion":"C/ San Juan, 64","agentes":13,"brokers":1,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Gines Perez Galera","email":"gines.perez@remax.es","movil":"645236662"}]},{"oficina":"GRUP DIRECT CENTRAL","ae":"RAISA","status":"ONGOING","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"971722722","email":"grupdirect@remax.es","direccion":"C/ Santiago Rusiñol, 11 ","agentes":23,"brokers":1,"managers":0,"coordinadores":4,"broker_list":[{"nombre":"Carlos Guidobono Zabala","email":"carlos.guidobono@remax.es","movil":"639171275"}]},{"oficina":"GRUP DIRECT II","ae":"RAISA","status":"ONGOING","ciudad":"MANACOR","provincia":"BALEARES","zona":"Baleares","telefono":"871051038","email":"grupdirect2@remax.es","direccion":"Pl. Sa Basssa, 10","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Carlos Guidobono Zabala","email":"carlos.guidobono@remax.es","movil":"639171275"}]},{"oficina":"GRUP DIRECT III","ae":"RAISA","status":"ONGOING","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"971722722","email":" ","direccion":"Avda. San Fernando 26 B","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Carlos Guidobono Zabala","email":"carlos.guidobono@remax.es","movil":"639171275"}]},{"oficina":"GRUP DIRECT IV","ae":"RAISA","status":"ONGOING","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"871714793","email":"grupdirect4@remax.es","direccion":"C/ Antoni Maura, 18","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Carlos Guidobono Zabala","email":"carlos.guidobono@remax.es","movil":"639171275"}]},{"oficina":"HUNTER","ae":"RAISA","status":"ONGOING","ciudad":"BOADILLA DEL MONTE","provincia":"MADRID","zona":"Madrid","telefono":"918279533","email":"hunter@remax.es","direccion":"Av. Infante Don Luis, 15 ","agentes":10,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Manuel Gallego Monino","email":"manuel.gallego@remax.es","movil":"639133340"}]},{"oficina":"INMOMÁS","ae":"RAISA","status":"ONGOING","ciudad":"ELCHE","provincia":"ALICANTE","zona":"Levante","telefono":"966665651","email":"inmomas@remax.es","direccion":"C/ Conrado del Campo, 16","agentes":71,"brokers":1,"managers":2,"coordinadores":10,"broker_list":[{"nombre":"Jose Martinez Sanchez","email":"jose.martinez@remax.es","movil":"647861968"}]},{"oficina":"INMOMÁS II","ae":"RAISA","status":"ONGOING","ciudad":"FINESTRAT","provincia":"ALICANTE","zona":"Levante","telefono":"966665651","email":"inmomas2@remax.es","direccion":"Av. País Valencià, 2. C.C. ","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jose Martinez Sanchez","email":"jose.martinez@remax.es","movil":"647861968"}]},{"oficina":"INMOMÁS III","ae":"RAISA","status":"ONGOING","ciudad":"ALICANTE","provincia":"ALICANTE","zona":"Levante","telefono":"966665651","email":"inmomas3@remax.es","direccion":"C/ Jose Luis de la Vega 2 ","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jose Martinez Sanchez","email":"jose.martinez@remax.es","movil":"647861968"}]},{"oficina":"INMOMÁS IV","ae":"RAISA","status":"ONGOING","ciudad":"JAVEA","provincia":"ALICANTE","zona":"Levante","telefono":"966665651","email":"inmomas4@remax.es","direccion":"C/ del Cabo de la Nao Placita,","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jose Martinez Sanchez","email":"jose.martinez@remax.es","movil":"647861968"}]},{"oficina":"INNOVA","ae":"RAISA","status":"ONGOING","ciudad":"SEVILLA","provincia":"SEVILLA","zona":"Andalucía y Extremadura","telefono":"955673044","email":"innova@remax.es","direccion":"C/ Luis Montoto, 88-90","agentes":22,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Jose Luis Rivero Gallego","email":"joseluis.rivero@remax.es","movil":"699471100"}]},{"oficina":"INSIGNIA","ae":"RAISA","status":"ONGOING","ciudad":"LAS PALMAS DE GRAN CANARIA","provincia":"LAS PALMAS","zona":"Canarias","telefono":"928837920","email":"insignia@remax.es","direccion":"C/ Luis Doreste Silva, 17","agentes":25,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Carlos De La Ossa Sanz","email":"carlos.delaossa@remax.es","movil":" 600440945"}]},{"oficina":"ISLA BLANCA","ae":"RAISA","status":"ONGOING","ciudad":"SANTA EULARIA DES RIU","provincia":"BALEARES","zona":"Baleares","telefono":"871515015","email":"islablanca@remax.es","direccion":"C/ Sant Vicent, 19 - local","agentes":9,"brokers":1,"managers":5,"coordinadores":1,"broker_list":[{"nombre":"Maria De Los Llanos Jimenez Casquet Flo","email":"mariadelosllanos.jimenez-casquet@remax.es","movil":"609946545"}]},{"oficina":"ISLAND","ae":"RAISA","status":"ONGOING","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"871591863","email":"island@remax.es","direccion":"C/ Menorca, 20","agentes":9,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Falconery Lorenzo","email":"falconery.lorenzo@remax.es","movil":"666762999"}]},{"oficina":"KOMPAS","ae":"RAISA","status":"ONGOING","ciudad":"GINES","provincia":"SEVILLA","zona":"Andalucía y Extremadura","telefono":"677331510","email":"kompas@remax.es","direccion":"C/ Ingeniería, 3","agentes":10,"brokers":2,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Alejandro Garrido","email":"alejandro.garrido@remax.es","movil":" 616929287"},{"nombre":"Julian Tovar","email":"julian.tovar@remax.es","movil":"677331510"}]},{"oficina":"LANZAGORTA","ae":"RAISA","status":"ONGOING","ciudad":"LAS PALMAS DE GRAN CANARIA","provincia":"LAS PALMAS","zona":"Canarias","telefono":"928377750","email":"lanzagorta@remax.es","direccion":"C/ Juan Manuel Durán ","agentes":14,"brokers":3,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Alfredo Sosa Diaz Saavedra","email":"alfredosds@gmail.com","movil":" 928242030"},{"nombre":"Eva M Romero Betancor","email":"evamaria.romero@remax.es","movil":"620731351"},{"nombre":"Jorge Henriquez Lopez","email":"jorge.henriquez@remax.es","movil":"646302260"}]},{"oficina":"LANZAGORTA CENTRAL","ae":"RAISA","status":"ONGOING","ciudad":"LAS PALMAS DE GRAN CANARIA","provincia":"LAS PALMAS","zona":"Canarias","telefono":"928242030","email":"lanzagortacentral@remax.es","direccion":"C/ León y Castillo, 241 ","agentes":33,"brokers":3,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Alfredo Sosa Diaz Saavedra","email":"alfredosds@gmail.com","movil":"928242030"},{"nombre":"Eva M Romero Betancor","email":"evamaria.romero@remax.es","movil":"620731351"},{"nombre":"Jorge Henriquez Lopez","email":"jorge.henriquez@remax.es","movil":"646302260"}]},{"oficina":"LEGACY","ae":"RAISA","status":"ONGOING","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":19,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Percy Loayza","email":"percy.loayza@remax.es","movil":"656 827 809"}]},{"oficina":"LEGEND","ae":"RAISA","status":"ONGOING","ciudad":"BOADILLA DEL MONTE","provincia":"MADRID","zona":"Madrid","telefono":"644248749","email":"legend@remax.es","direccion":"Pl. de la Cruz, 2","agentes":14,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Alvaro Rodriguez","email":"alvaro.rodriguez@remax.es","movil":"644248749"}]},{"oficina":"LEGIO","ae":"RAISA","status":"ONGOING","ciudad":"LEON","provincia":"LEON","zona":"Norte y Centro","telefono":"987265060","email":"legio@remax.es","direccion":"Av. Independencia, 14 - bajo","agentes":6,"brokers":1,"managers":2,"coordinadores":3,"broker_list":[{"nombre":"Juan Jose Fijo De Cabo","email":"juanjose.fijo@remax.es","movil":"659937879"}]},{"oficina":"LIVING","ae":"RAISA","status":"ONGOING","ciudad":"MURCIA","provincia":"MURCIA","zona":"Levante","telefono":"968955597","email":"living@remax.es","direccion":"Av. General Primo de Rivera, ","agentes":22,"brokers":2,"managers":4,"coordinadores":0,"broker_list":[{"nombre":"Bartxu Caballero","email":"bartxu.caballero@remax.es","movil":" 666451163"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"}]},{"oficina":"LIVING II","ae":"RAISA","status":"ONGOING","ciudad":"MURCIA","provincia":"MURCIA","zona":"Levante","telefono":"968955597","email":"living2@remax.es","direccion":"Torre Nuevo Puerto Bello, bajo","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Bartxu Caballero","email":"bartxu.caballero@remax.es","movil":" 666451163"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"}]},{"oficina":"LIVING III","ae":"RAISA","status":"ONGOING","ciudad":"CIEZA","provincia":"MURCIA","zona":"Levante","telefono":"968955597","email":"living3@remax.s","direccion":"Camino de Murcia 64, bajo","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Bartxu Caballero","email":"bartxu.caballero@remax.es","movil":" 666451163"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":"64809374"}]},{"oficina":"LODONAR","ae":"RAISA","status":"ONGOING","ciudad":"TORRELODONES","provincia":"MADRID","zona":"Madrid","telefono":"918591090","email":"lodonar@remax.es","direccion":"C/ Real, 33-35 - local 2","agentes":6,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Eduardo Martin Madrigal","email":"eduardo.martin@remax.es","movil":"637445668"}]},{"oficina":"LUXURY","ae":"RAISA","status":"ONGOING","ciudad":"VIGO","provincia":"PONTEVEDRA","zona":"Norte y Centro","telefono":"654350380","email":"luxury@remax.es","direccion":"C/ Policarpo Sanz, 12 - bajo","agentes":6,"brokers":1,"managers":2,"coordinadores":0,"broker_list":[{"nombre":"Jose Ramon Garcia Gonzalez","email":"joseramon.garciagonzalez@remax.es","movil":" 654350380"}]},{"oficina":"MAJOR","ae":"RAISA","status":"ONGOING","ciudad":"INCA","provincia":"BALEARES","zona":"Baleares","telefono":"971688584","email":"major@remax.es","direccion":"C/ Major, 43","agentes":7,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Shamil Badyrgov Zahanaralie","email":"shamil.badyrgov@remax.es","movil":"672587573"}]},{"oficina":"MARÍTIMA","ae":"RAISA","status":"ONGOING","ciudad":"ESTEPONA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"951531537","email":"maritima@remax.es","direccion":"Av. España, 1 – local 4","agentes":5,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Damaris Ubieta Cano","email":"damaris.ubieta@remax.es","movil":"654654485"},{"nombre":"Francisco Munoz Calvente","email":"francisco.munoz@remax.es","movil":" 602222718"}]},{"oficina":"MEGA HOME","ae":"RAISA","status":"ONGOING","ciudad":"PUERTO SAGUNTO","provincia":"VALENCIA","zona":"Levante","telefono":"961188188","email":"megahome@remax.es","direccion":"Av. Arquitecto Alfredo Simón, ","agentes":5,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jose Manuel Merlos Munoz","email":"josemanuel.merlos@remax.es","movil":"627 42 18 55"},{"nombre":"Kevin Merlos Gazquez","email":"kevin.merlos@remax.es","movil":"678789916"}]},{"oficina":"MILENIO","ae":"RAISA","status":"ONGOING","ciudad":"OURENSE","provincia":"OURENSE","zona":"Norte y Centro","telefono":"988686336","email":"milenio@remax.es","direccion":"Rúa Bedoya, 1","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Agustin Manuel Formoso Gonzalez","email":"agustin.formoso@remax.es","movil":"686968103"}]},{"oficina":"MOON","ae":"RAISA","status":"ONGOING","ciudad":"RIVAS-VACIAMADRID","provincia":"MADRID","zona":"Madrid","telefono":"918481272","email":"moon@remax.es","direccion":"Av. Pablo Iglesias, 79 – local","agentes":8,"brokers":2,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Isaac Perales Rubio","email":"isaac.perales@remax.es","movil":"918481272"},{"nombre":"Patricia Garcia Fernandez","email":"patricia.garcia@remax.es","movil":"918481272"}]},{"oficina":"NEW LIFE","ae":"RAISA","status":"ONGOING","ciudad":"MAJADAHONDA","provincia":"MADRID","zona":"Madrid","telefono":"911049623","email":"newlife@remax.es","direccion":"Avenida reyes Católicos, 2  - ","agentes":16,"brokers":2,"managers":6,"coordinadores":1,"broker_list":[{"nombre":"Ismael Perez Ruiz","email":"ismael.perez@remax.es","movil":" "},{"nombre":"Maria Perez Ruiz","email":"maria.perez@remax.es","movil":" "}]},{"oficina":"NOVAVILA","ae":"RAISA","status":"ONGOING","ciudad":"VILADECANS","provincia":"BARCELONA","zona":"Cataluña y Aragón","telefono":"936819737","email":"novavila@remax.es","direccion":"Av. Francesc Macia, 17","agentes":2,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Antonio Jose Corral Moreno","email":"antonio.corral@remax.es","movil":"658822544"}]},{"oficina":"OPTIMA","ae":"RAISA","status":"ONGOING","ciudad":"ALCOBENDAS","provincia":"MADRID","zona":"Madrid","telefono":"910530735","email":"optima@remax.es","direccion":"C/ Marqués de la Valdavia, 129","agentes":21,"brokers":3,"managers":2,"coordinadores":1,"broker_list":[{"nombre":"David Arias Gomez","email":"david.arias@remax.es","movil":"910530735"},{"nombre":"Ismael Perez Ruiz","email":"ismael.perez@remax.es","movil":" "},{"nombre":"Maria Perez Ruiz","email":"maria.perez@remax.es","movil":" "}]},{"oficina":"PEOPLE","ae":"RAISA","status":"ONGOING","ciudad":"GALAPAGAR","provincia":"MADRID","zona":"Madrid","telefono":"649337742","email":"people@remax.es","direccion":"Ctra. Torrelodones, 24","agentes":5,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jorge Martin Blazquez","email":"jorge.martin@remax.es","movil":"649337742"}]},{"oficina":"PLUS","ae":"RAISA","status":"ONGOING","ciudad":"POZUELO DE ALARCÓN","provincia":"MADRID","zona":"Madrid","telefono":"911496907","email":"plus@remax.es","direccion":"C/ Luis Béjar, 20","agentes":7,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Javier Pajaron","email":"javier.pajaron@remax.es","movil":"13473747006"},{"nombre":"Pablo Penalver Ascanio","email":"pablo.penalver@remax.es","movil":"617812440"}]},{"oficina":"PREMIUM","ae":"RAISA","status":"ONGOING","ciudad":"VILLAVICIOSA DE ODON","provincia":"MADRID","zona":"Madrid","telefono":"911286699","email":"premium@remax.es","direccion":"Av. Príncipe de Asturias, 149","agentes":27,"brokers":2,"managers":1,"coordinadores":3,"broker_list":[{"nombre":"Ramon Garcia Parra","email":"ramon.garcia@remax.es","movil":"609280806"},{"nombre":"Tamara Garcia Ramos","email":"tamara.garcia@remax.es","movil":"635545585"}]},{"oficina":"PREMIUM CASAS LUXURY","ae":"RAISA","status":"ONGOING","ciudad":"POZUELO DE ALARCÓN","provincia":"MADRID","zona":"Madrid","telefono":"911286699","email":"premiumcasasluxury@remax.es","direccion":"Pº Club Deportivo, 1. Edif. 4","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ramon Garcia Parra","email":"ramon.garcia@remax.es","movil":"609280806"},{"nombre":"Tamara Garcia Ramos","email":"tamara.garcia@remax.es","movil":"635545585"}]},{"oficina":"PREMIUM II","ae":"RAISA","status":"ONGOING","ciudad":"NAVALUENGA","provincia":"AVILA","zona":"Madrid","telefono":"911286699","email":"premium2@remax.es","direccion":"C/ La Iglesia, 7","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ramon Garcia Parra","email":"ramon.garcia@remax.es","movil":"609280806"},{"nombre":"Tamara Garcia Ramos","email":"tamara.garcia@remax.es","movil":"635545585"}]},{"oficina":"PRINCESS","ae":"RAISA","status":"ONGOING","ciudad":"ALICANTE","provincia":"ALICANTE","zona":"Levante","telefono":"966262821","email":"princess@remax.es","direccion":"C/ Navas, 25 - bajo","agentes":19,"brokers":1,"managers":1,"coordinadores":3,"broker_list":[{"nombre":"Fernando Navarro Bacov","email":"fernando.navarro@remax.es","movil":" "}]},{"oficina":"PRINCESS II","ae":"RAISA","status":"ONGOING","ciudad":"ALICANTE","provincia":"ALICANTE","zona":"Levante","telefono":"","email":"princess2@remax.es","direccion":"Passeig Eslanada d'Espanya","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Fernando Navarro Bacov","email":"fernando.navarro@remax.es","movil":" "}]},{"oficina":"PRINCESS III","ae":"RAISA","status":"ONGOING","ciudad":"ALICANTE","provincia":"ALICANTE","zona":"Levante","telefono":"","email":" ","direccion":"C/ Constitución 14, 3º Dcha","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Fernando Navarro Bacov","email":"fernando.navarro@remax.es","movil":" "}]},{"oficina":"PUERTO","ae":"RAISA","status":"ONGOING","ciudad":"MÁLAGA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"952310562","email":"puerto@remax.es","direccion":"Av. Obispo Angel Herrera","agentes":33,"brokers":2,"managers":1,"coordinadores":3,"broker_list":[{"nombre":"Borja Pascual Sanchez","email":"borja.pascual@remax.es","movil":"606453453"},{"nombre":"Jose Luis Rivero Gallego","email":"joseluis.rivero@remax.es","movil":"699471100"}]},{"oficina":"RAMBLA","ae":"RAISA","status":"ONGOING","ciudad":"TARRAGONA","provincia":"TARRAGONA","zona":"Cataluña y Aragón","telefono":"613298861","email":"rambla@remax.es","direccion":"Rambla Nova, 7","agentes":3,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Clara Bartoli Gabas","email":"clara.bartoli@remax.es","movil":"613298861 "}]},{"oficina":"REALTOR","ae":"RAISA","status":"ONGOING","ciudad":"LAS ROZAS","provincia":"MADRID","zona":"Madrid","telefono":"910419818","email":"realtor@remax.es","direccion":"C/ Verónica, 6 local 9","agentes":15,"brokers":3,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Angel Ruiz Ojeda","email":"angel.ruiz@remax.es","movil":" 640028220"},{"nombre":"Lourdes Molina Ramirez","email":"lourdes.molina@remax.es","movil":" 608368368"},{"nombre":"Rocio De Claver Gonzalez","email":"rocio.declaver@remax.es","movil":" 617157805"}]},{"oficina":"RIAZOR","ae":"RAISA","status":"ONGOING","ciudad":"A CORUÑA","provincia":"A CORUÑA","zona":"Norte y Centro","telefono":"881899263","email":"riazor@remax.es","direccion":"Av. Calvo Sotelo, 11 - bajo","agentes":24,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jose Rafael Maronas Hombre","email":"joserafael.maronas@remax.es","movil":"677422316"},{"nombre":"Ruben Allegue Canedo","email":"ruben.allegue@remax.es","movil":"606929519"}]},{"oficina":"RIAZOR II","ae":"RAISA","status":"ONGOING","ciudad":"SANTIAGO DE COMPOSELA","provincia":"A CORUÑA","zona":"Norte y Centro","telefono":"981595208","email":"riazor2@remax.es","direccion":"Av. Romero Donallo, 43 - bajo","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jose Rafael Maronas Hombre","email":"joserafael.maronas@remax.es","movil":"677422316"},{"nombre":"Ruben Allegue Canedo","email":"ruben.allegue@remax.es","movil":"606929519"}]},{"oficina":"ROSALES","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915425875","email":"rosales@remax.es","direccion":"C/ Ferraz, 72","agentes":39,"brokers":1,"managers":2,"coordinadores":4,"broker_list":[{"nombre":"Jorge Del Rio De Antonio","email":"jorge.delrio@remax.es","movil":"649299215"}]},{"oficina":"ROSALES II","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915425875","email":" ","direccion":"C/ Guzmán el Bueno, 42","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jorge Del Rio De Antonio","email":"jorge.delrio@remax.es","movil":"915425875"}]},{"oficina":"ROSALES III","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"","email":" ","direccion":"Av. Felipe II, 6 - bajo dcha","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jorge Del Rio De Antonio","email":"jorge.delrio@remax.es","movil":"915425875"}]},{"oficina":"ROSALES IV","ae":"RAISA","status":"ONGOING","ciudad":"MÓSTOLES","provincia":"MADRID","zona":"Madrid","telefono":"919951756","email":"teamsm.rosales@remax.es","direccion":"C/ Pintor Ribera, 1 local","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jorge Del Rio De Antonio","email":"jorge.delrio@remax.es","movil":"649299215"}]},{"oficina":"SOROLLA","ae":"RAISA","status":"ONGOING","ciudad":"VALENCIA","provincia":"VALENCIA","zona":"Levante","telefono":"611369767","email":"sorolla@remax.es","direccion":"C/ Pintor Ferrer Calatayud, 3","agentes":7,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Julio Villarroya Pena","email":"julio.villarroya@remax.es","movil":"628932347"}]},{"oficina":"SORONA","ae":"RAISA","status":"ONGOING","ciudad":"MAJADAHONDA","provincia":"MADRID","zona":"Madrid","telefono":"910495246","email":"sorona@remax.es","direccion":"Av. Mimbreras, 3","agentes":12,"brokers":2,"managers":5,"coordinadores":1,"broker_list":[{"nombre":"Irene Arias Perez","email":"irene.arias@remax.es","movil":"609 294 304"},{"nombre":"Juan Antonio Osuna Osuna","email":"juanantonio.osuna@remax.es","movil":" 691226557"}]},{"oficina":"SUNSET","ae":"RAISA","status":"ONGOING","ciudad":"FUENGIROLA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"951430794","email":"sunset@remax.es","direccion":"Av. Ramón y Cajal, 54","agentes":40,"brokers":1,"managers":2,"coordinadores":3,"broker_list":[{"nombre":"Fran Rico Gomez","email":"fran.rico@remax.es","movil":"664111860"}]},{"oficina":"TECNO","ae":"RAISA","status":"ONGOING","ciudad":"CIEMPOZUELOS","provincia":"MADRID","zona":"Madrid","telefono":"630807708","email":"tecno@remax.es","direccion":"C/ José María de Benito Serra,","agentes":11,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Javier San Jose Ugena","email":"javier.sanjose@remax.es","movil":"629471281"}]},{"oficina":"TERMES","ae":"RAISA","status":"ONGOING","ciudad":"VILLANUEVA DE LA CANADA","provincia":"MADRID","zona":"Madrid","telefono":"911344502","email":"termes@remax.es","direccion":"C/ Real, 12 - local B","agentes":8,"brokers":1,"managers":2,"coordinadores":1,"broker_list":[{"nombre":"Manuel Gonzalez","email":"manuel.gonzalez@remax.es","movil":"911344502"}]},{"oficina":"TERMES III","ae":"RAISA","status":"ONGOING","ciudad":"NAVALCARNERO","provincia":"MADRID","zona":"Madrid","telefono":"918101277","email":"termes3@remax.es","direccion":"C/ La Doctora, 3","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Manuel Gonzalez","email":"manuel.gonzalez@remax.es","movil":"911344502"}]},{"oficina":"TERRA II","ae":"RAISA","status":"ONGOING","ciudad":"CASTELLÓN DE LA PLANA","provincia":"CASTELLON","zona":"Levante","telefono":"964846802","email":"terra2@remax.es","direccion":"Ronda Magdalena, 10","agentes":16,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Diego Mussi","email":"diego.mussi@remax.es","movil":"964846802"}]},{"oficina":"TOTAL","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"910146334","email":"total@remax.es","direccion":"C/ General Ricardos, 136","agentes":4,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Miguel Borge Lopez","email":"miguel.borge@remax.es","movil":"628075094"}]},{"oficina":"TRUE","ae":"RAISA","status":"ONGOING","ciudad":"VALENCIA","provincia":"VALENCIA","zona":"Levante","telefono":"961 108 121","email":"true@remax.es","direccion":"Pº de la Alameda, 35 bis","agentes":25,"brokers":2,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Javier Villalba Viguer","email":"javier.villalbaviguer@remax.es","movil":"601453343"},{"nombre":"Jorge Villalba Viguer","email":"jorge.villalba@remax.es","movil":"961108121"}]},{"oficina":"URBE","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915912574","email":"urbe@remax.es","direccion":"Plaza de Olavide, 10","agentes":101,"brokers":1,"managers":1,"coordinadores":4,"broker_list":[{"nombre":"Ricardo Iturriaga Pena","email":"ricardo.iturriaga@remax.es","movil":"616177274"}]},{"oficina":"URBE CHAMBERI","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915912574","email":"urbechamberi@remax.es","direccion":"C/ Galileo, 33","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ricardo Iturriaga Pena","email":"ricardo.iturriaga@remax.es","movil":"616177274"}]},{"oficina":"URBE II","ae":"RAISA","status":"ONGOING","ciudad":"VALENCIA","provincia":"VALENCIA","zona":"Levante","telefono":"963531344","email":"urbe2@remax.es","direccion":"C/ Joaquín Costa, 4","agentes":52,"brokers":1,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Ricardo Iturriaga Pena","email":"ricardo.iturriaga@remax.es","movil":"616177274"}]},{"oficina":"URBE MAS","ae":"RAISA","status":"ONGOING","ciudad":"LAS ROZAS","provincia":"MADRID","zona":"Madrid","telefono":"915912574","email":"urbemas@remax.es","direccion":"C/ Chile, 4 - planta 1ª ","agentes":20,"brokers":1,"managers":1,"coordinadores":0,"broker_list":[{"nombre":"Ricardo Iturriaga Pena","email":"ricardo.iturriaga@remax.es","movil":"616177274"}]},{"oficina":"URBE VENTAS","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"917455542","email":"urbeventas@remax.es","direccion":"C/ Francisco Navacerrada, 57","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ricardo Iturriaga Pena","email":"ricardo.iturriaga@remax.es","movil":"616177274"}]},{"oficina":"VETUSTA","ae":"RAISA","status":"ONGOING","ciudad":"OVIEDO","provincia":"ASTURIAS","zona":"Norte y Centro","telefono":"985061778","email":"vetusta@remax.es","direccion":"C/ Rosa María Menéndez lópez, ","agentes":64,"brokers":1,"managers":3,"coordinadores":10,"broker_list":[{"nombre":"Jairo Robles Rodriguez","email":"jairo.robles@remax.es","movil":" 652938201"}]},{"oficina":"VETUSTA II","ae":"RAISA","status":"ONGOING","ciudad":"GIJON","provincia":"ASTURIAS","zona":"Norte y Centro","telefono":"985061778","email":"vetusta2@remax.es","direccion":"C/ José María Martínez 1","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Jairo Robles Rodriguez","email":"jairo.robles@remax.es","movil":" 652938201"}]},{"oficina":"VETUSTA III","ae":"RAISA","status":"ONGOING","ciudad":"ALMERIA","provincia":"ALMERIA","zona":"Andalucía y Extremadura","telefono":"950187796","email":"vetusta3@remax.es","direccion":"Av. del Mediterráneo, 252","agentes":5,"brokers":3,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Jairo Robles Rodriguez","email":"jairo.robles@remax.es","movil":" 652938201"},{"nombre":"Javier Mendez Roldan","email":"javier.mendezroldan@remax.es","movil":"628578621"},{"nombre":"Lucia Torrado Garcia","email":"lucia.torrado@remax.es","movil":"619380469"}]},{"oficina":"VISTA","ae":"RAISA","status":"ONGOING","ciudad":"TORREVIEJA","provincia":"ALICANTE","zona":"Levante","telefono":"966700368","email":"vista@remax.es","direccion":"Av. de la Libertad, 6 - bajo","agentes":14,"brokers":1,"managers":1,"coordinadores":2,"broker_list":[{"nombre":"Maurice Provoost","email":"maurice.provoost@remax.es","movil":"665840032"}]},{"oficina":"VISTA II","ae":"RAISA","status":"ONGOING","ciudad":"EL CAMPELLO","provincia":"ALICANTE","zona":"Levante","telefono":"865646600","email":"vista2@remax.es","direccion":"C/ San Bartolomé, 51","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Maurice Provoost","email":"maurice.provoost@remax.es","movil":"665840032"}]},{"oficina":"WELCOME","ae":"RAISA","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915722610","email":"welcome@remax.es","direccion":"C/ Sor Ángela de la Cruz nº 30","agentes":17,"brokers":1,"managers":0,"coordinadores":3,"broker_list":[{"nombre":"Pedro Bermejo","email":"pedro.bermejo@remax.es","movil":"654313489"}]},{"oficina":"Y TÚ","ae":"RAISA","status":"ONGOING","ciudad":"ZARAGOZA","provincia":"ZARAGOZA","zona":"Cataluña y Aragón","telefono":"976507622","email":"ytu@remax.es","direccion":"Cesareo Alierta, 8 local 4","agentes":4,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Octavio Pequerul Ainsa","email":"octavio.pequerul@remax.es","movil":"609487012"},{"nombre":"Yaxi Ye","email":"yaxi.ye@remax.es","movil":"651483688"}]},{"oficina":"ACASA","ae":"Sin asignar","status":"WON","ciudad":"PONTEVEDRA","provincia":"PONTEVEDRA","zona":"Norte y Centro","telefono":"986090977","email":"acasa@remax.es","direccion":"C/ Joaquin Costa, 53 bajo A","agentes":6,"brokers":1,"managers":0,"coordinadores":2,"broker_list":[{"nombre":"Claudio Santalices Rodriguez","email":"claudio.santalices@remax.es","movil":"641651373"}]},{"oficina":"ACTION","ae":"Sin asignar","status":"WON","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915799055","email":"action@remax.es","direccion":"C/ Clara del Rey, 27","agentes":37,"brokers":1,"managers":2,"coordinadores":1,"broker_list":[{"nombre":"Luis Dieguez Villarejo","email":"luis.dieguez@remax.es","movil":"915799055"}]},{"oficina":"ALMA","ae":"Sin asignar","status":"WON","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"914994747","email":"alma@remax.es","direccion":"C/ Bulevar Jose Prat 9ª","agentes":4,"brokers":2,"managers":0,"coordinadores":3,"broker_list":[{"nombre":"Alberto Landaburu","email":"alberto.landaburu@remax.es","movil":"914994747"},{"nombre":"Maria Blanco","email":"maria.blanco@remax.es","movil":"914994747"}]},{"oficina":"ALMA II","ae":"Sin asignar","status":"WON","ciudad":"RIVAS-VACIAMADRID","provincia":"MADRID","zona":"Madrid","telefono":"","email":" ","direccion":"Pl. Blas de Otero, 3 - local 1","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Alberto Landaburu","email":"alberto.landaburu@remax.es","movil":"914994747"},{"nombre":"Maria Blanco","email":"maria.blanco@remax.es","movil":"914994747"}]},{"oficina":"BETTER LIFE","ae":"Sin asignar","status":"WON","ciudad":"INCA","provincia":"BALEARES","zona":"Baleares","telefono":"871042110","email":"betterlife@remax.es","direccion":"C/ Joan d'Austria,  34","agentes":14,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Ines Mercadal Vidal","email":"ines.mercadal@remax.es","movil":"651332818"},{"nombre":"Jose Egea Roda","email":"jose.egea@remax.es","movil":"871042110"}]},{"oficina":"BETTER LIFE BLUE","ae":"Sin asignar","status":"WON","ciudad":"ALCUDIA","provincia":"BALEARES","zona":"Baleares","telefono":"","email":"betterlifeblue@remax.es","direccion":"PENDIENTE UBICACIÓN","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ines Mercadal Vidal","email":"ines.mercadal@remax.es","movil":"651332818"},{"nombre":"Jose Egea Roda","email":"jose.egea@remax.es","movil":" 647693635"}]},{"oficina":"CASA ELITE","ae":"Sin asignar","status":"WON","ciudad":"GIJÓN","provincia":"ASTURIAS","zona":"Norte y Centro","telefono":"984480000","email":"casaelite@remax.es","direccion":"Pl. Humedal,1 - bajo","agentes":43,"brokers":2,"managers":0,"coordinadores":5,"broker_list":[{"nombre":"Ana Rosa Jimenez","email":"anarosa.jimenez@remax.es","movil":"984480000"},{"nombre":"Bartolome Panos","email":"bartolome.panos@remax.es","movil":"984480000"}]},{"oficina":"CITY","ae":"Sin asignar","status":"WON","ciudad":"REUS","provincia":"TARRAGONA","zona":"Cataluña y Aragón","telefono":"977092890","email":"city@remax.es","direccion":"C/ Costa Brava, 20 Local","agentes":15,"brokers":2,"managers":1,"coordinadores":3,"broker_list":[{"nombre":"David Bonache Alvarez","email":"david.bonache@remax.es","movil":"615520552"},{"nombre":"Sandra Bonache Alvarez","email":"sandra.bonache@remax.es","movil":" 672504577"}]},{"oficina":"CONFORT","ae":"Sin asignar","status":"WON","ciudad":"ZARAGOZA","provincia":"ZARAGOZA","zona":"Cataluña y Aragón","telefono":"976795260","email":"confort@remax.es","direccion":"C/ Clara Campoamor, 5","agentes":6,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Carlos Sanz Olmos","email":"carlos.sanz@remax.es","movil":"639668827"}]},{"oficina":"DEL MAR","ae":"Sin asignar","status":"WON","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":6,"brokers":2,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Lara Mora","email":"lara.mora@remax.es","movil":"+34 659763876"},{"nombre":"Leonardo Ezequiel Francisco","email":"leo.francisco@remax.es","movil":"+34 650018715"}]},{"oficina":"DRAC","ae":"Sin asignar","status":"WON","ciudad":"SANTANYI","provincia":"BALEARES","zona":"Baleares","telefono":"971654300","email":"drac@remax.es","direccion":"Pl. Mayor 11,","agentes":6,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Damia Burguera Pons","email":"damia.burguera@remax.es","movil":"609591423"}]},{"oficina":"GENTILE HOME","ae":"Sin asignar","status":"WON","ciudad":"","provincia":"","zona":"","telefono":"","email":"","direccion":"","agentes":12,"brokers":1,"managers":1,"coordinadores":1,"broker_list":[{"nombre":"Eduardo Bonet Martinez","email":"eduardo.bonet@remax.es","movil":"913430876"}]},{"oficina":"IMMOCORNER","ae":"Sin asignar","status":"WON","ciudad":"PALMA DE MALLORCA","provincia":"BALEARES","zona":"Baleares","telefono":"971122991","email":"immocorner@remax.es","direccion":"Pº Mallorca, 14, bajos puerta","agentes":9,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Eliana De La Fuente","email":"eliana.delafuente@remax.es","movil":"650 51 66 30"},{"nombre":"Michael Darcq","email":"michael.darcq@remax.es","movil":"686 605 006"}]},{"oficina":"JUMBO","ae":"Sin asignar","status":"WON","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"915344831","email":"jumbo@remax.es","direccion":"C/ Cea Bermúdez, 10 - entrepla","agentes":80,"brokers":7,"managers":2,"coordinadores":2,"broker_list":[{"nombre":"Alberto Jimenez Sanchez","email":"alberto.jimenez@remax.es","movil":"618110040"},{"nombre":"Anunciacion Jimenez Sanchez","email":"anunciacion.jimenez@remax.es","movil":"690616336"},{"nombre":"Bernar Jimenez Sanchez","email":"bernar.jimenez@remax.es","movil":"698693235"},{"nombre":"Eduvigis Sanchez Sanz","email":"eduvigis.sanchez@remax.es","movil":"915344831"},{"nombre":"Estefania Jimenez Sanchez","email":"estefania.jimenez@remax.es","movil":" 629350999"},{"nombre":"Mari Carmen Rios Morote","email":"maricarmen.rios@remax.es","movil":" 648093748"},{"nombre":"Myriam Jimenez Sanchez","email":"myriam.jimenez@remax.es","movil":"606970657"}]},{"oficina":"MONTE","ae":"Sin asignar","status":"WON","ciudad":"BOADILLA DEL MONTE","provincia":"MADRID","zona":"Madrid","telefono":"915781548","email":"monte@remax.es","direccion":"Av. de Montepríncipe, s/n. C.C","agentes":11,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Belen Alvarez Cotroneo","email":"belen.alvarez@remax.es","movil":" 606649895"},{"nombre":"Carlos Munoz Pachon","email":"carlos.munoz@remax.es","movil":" 619117769"}]},{"oficina":"ZIELO","ae":"Sin asignar","status":"WON","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"","email":"zielo@remax.es","direccion":"Av. Europa, 25","agentes":37,"brokers":1,"managers":2,"coordinadores":2,"broker_list":[{"nombre":"Angel Aranda Gonzalez","email":"angel.aranda@remax.es","movil":"910582235"}]},{"oficina":"ZIELO II","ae":"Sin asignar","status":"WON","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"","email":"zielo2@remax.es","direccion":"Av. De la Peseta, 25 - local","agentes":0,"brokers":1,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Angel Aranda Gonzalez","email":"angel.aranda@remax.es","movil":" 630187344"}]},{"oficina":"CALA","ae":"Sin asignar","status":"ONGOING","ciudad":"CALA RATJADA","provincia":"BALEARES","zona":"Baleares","telefono":"","email":"cala@remax.es","direccion":"C/ Magallanes, 25","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Ladislav Oczeljak","email":"ladislav.oczeljak@remax.es","movil":"636826461"},{"nombre":"Victoria Vaquer Adrover","email":"victoria.vaquer@remax.es","movil":"699909112"}]},{"oficina":"DREAM HOME","ae":"Sin asignar","status":"ONGOING","ciudad":"ESTEPONA","provincia":"MALAGA","zona":"Andalucía y Extremadura","telefono":"952713843","email":"dreamhome@remax.es","direccion":"Avda. Litoral, Playa del ","agentes":9,"brokers":1,"managers":0,"coordinadores":1,"broker_list":[{"nombre":"Laurens Van Noten","email":"laurens.vannoten@remax.es","movil":"+34711053974"}]},{"oficina":"SELECT","ae":"Sin asignar","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"914510131","email":"select@remax.es","direccion":"C/ de Recaredo 3 - local 1","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Alejandro Gabriel Venzi","email":"alejandro.venzi@remax.es","movil":"650770928"},{"nombre":"Natalia Carolina Zoratto","email":"natalia.zoratto@remax.es","movil":"683161167"}]},{"oficina":"SIGMA","ae":"Sin asignar","status":"ONGOING","ciudad":"MADRID","provincia":"MADRID","zona":"Madrid","telefono":"","email":"sigma@remax.es","direccion":"Avenida de Burgos, 36","agentes":0,"brokers":2,"managers":0,"coordinadores":0,"broker_list":[{"nombre":"Gonzalo Alejandro Alvarez Nunez","email":"gonzalo.alvarez@remax.es","movil":"699 674 273"},{"nombre":"Maria Agustina Viola","email":"agustina.viola@remax.es","movil":"682 654 420 "}]}];
-
-const AE_ACTIVE = ['JUAN','LAIA','RAISA'];
-const AE_ALL = ['JUAN','LAIA','RAISA','Sin asignar'];
-const AE_COL = {
-  JUAN:{bg:'#EFF6FF',txt:'#1D4ED8',cls:'av-j'},
-  LAIA:{bg:'#F0FDF4',txt:'#166534',cls:'av-l'},
-  RAISA:{bg:'#F5F3FF',txt:'#5B21B6',cls:'av-r'},
-  'Sin asignar':{bg:'#F8F8F7',txt:'#555',cls:'av-s'}
+// ─────────────────────────────────────────────────────────────────────────────
+// TARIFAS ORIGINALES
+// Estándar: cada tramo tiene { min, max, mes, sem, ano }
+// REMAX:    cada tramo tiene { min, max, mes, sem, ano }
+// ─────────────────────────────────────────────────────────────────────────────
+const ORIG = {
+  agency: [
+    {min:1,max:1,mes:79,tri:null,sem:71,ano:67},
+    {min:2,max:3,mes:55,tri:null,sem:50,ano:47},
+    {min:4,max:9,mes:43,tri:null,sem:39,ano:37},
+    {min:10,max:14,mes:40,tri:null,sem:36,ano:34},
+    {min:15,max:9999,mes:38,tri:null,sem:34,ano:32},
+  ],
+  premium: [
+    {min:1,max:1,mes:199,tri:null,sem:179,ano:169},
+    {min:2,max:2,mes:120,tri:null,sem:108,ano:102},
+    {min:3,max:4,mes:108,tri:null,sem:97,ano:92},
+    {min:5,max:9999,mes:95,tri:null,sem:86,ano:81},
+  ],
+  rmAgn: [
+    {min:1,max:4,mes:39,tri:117,sem:null,ano:31},
+    {min:5,max:15,mes:31,tri:93,sem:26,ano:22},
+    {min:16,max:30,mes:26,tri:78,sem:22,ano:19},
+    {min:31,max:45,mes:22,tri:66,sem:19,ano:16},
+    {min:46,max:60,mes:18,tri:54,sem:15,ano:13},
+    {min:61,max:9999,mes:15,tri:45,sem:13,ano:11},
+  ],
+  rmPre: [
+    {min:1,max:4,mes:66,tri:199,sem:56,ano:48},
+    {min:5,max:15,mes:56,tri:169,sem:48,ano:41},
+    {min:16,max:30,mes:48,tri:145,sem:41,ano:34},
+    {min:31,max:45,mes:41,tri:124,sem:34,ano:29},
+    {min:46,max:60,mes:34,tri:103,sem:29,ano:25},
+    {min:61,max:9999,mes:29,tri:87,sem:25,ano:21},
+  ],
+  kwAgn: [
+    {min:1,max:4,mes:39,tri:117,sem:null,ano:31},
+    {min:5,max:15,mes:31,tri:93,sem:26,ano:22},
+    {min:16,max:30,mes:26,tri:78,sem:22,ano:19},
+    {min:31,max:45,mes:22,tri:66,sem:19,ano:16},
+    {min:46,max:60,mes:18,tri:54,sem:15,ano:13},
+    {min:61,max:9999,mes:15,tri:45,sem:13,ano:11},
+  ],
+  kwPre: [
+    {min:1,max:4,mes:66,tri:199,sem:56,ano:48},
+    {min:5,max:15,mes:56,tri:169,sem:48,ano:41},
+    {min:16,max:30,mes:48,tri:145,sem:41,ano:34},
+    {min:31,max:45,mes:41,tri:124,sem:34,ano:29},
+    {min:46,max:60,mes:34,tri:103,sem:29,ano:25},
+    {min:61,max:9999,mes:29,tri:87,sem:25,ano:21},
+  ],
+  evAgn: [
+    {min:1,max:4,mes:36,tri:108,sem:null,ano:29},
+    {min:5,max:15,mes:29,tri:86,sem:24,ano:20},
+    {min:16,max:30,mes:24,tri:72,sem:20,ano:18},
+    {min:31,max:45,mes:20,tri:61,sem:18,ano:15},
+    {min:46,max:60,mes:17,tri:50,sem:14,ano:12},
+    {min:61,max:9999,mes:14,tri:42,sem:12,ano:10},
+  ],
+  evPre: [
+    {min:1,max:4,mes:61,tri:184,sem:52,ano:44},
+    {min:5,max:15,mes:52,tri:156,sem:44,ano:38},
+    {min:16,max:30,mes:44,tri:134,sem:38,ano:31},
+    {min:31,max:45,mes:38,tri:114,sem:31,ano:27},
+    {min:46,max:60,mes:31,tri:95,sem:27,ano:23},
+    {min:61,max:9999,mes:27,tri:80,sem:23,ano:19},
+  ],
+  iva: 21,
 };
 
-let DATA = [];
-let CONTACTED = {};
+function loadT() {
+  try { const s=localStorage.getItem('lystos_t6'); if(s) return JSON.parse(s); } catch(e){}
+  return JSON.parse(JSON.stringify(ORIG));
+}
+function saveT() {
+  try { localStorage.setItem('lystos_t6', JSON.stringify(T)); } catch(e){}
+  showToast(); render();
+}
+function resetTarifas() {
+  if (!confirm('¿Restaurar todas las tarifas a los valores originales?')) return;
+  T = JSON.parse(JSON.stringify(ORIG));
+  saveT(); buildPanel();
+}
+let T = loadT();
 
-// Firebase Firestore sync
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyANaetefY__WyBsgWtBut_s8nTOrceYnmY",
-  authDomain: "remax-panel.firebaseapp.com",
-  projectId: "remax-panel",
-  storageBucket: "remax-panel.firebasestorage.app",
-  messagingSenderId: "999825797226",
-  appId: "1:999825797226:web:47f8ceda3d4aafc09fda13"
-};
-
-let _db = null;
-let _localWrite = false; // flag para no re-aplicar cambios propios
-
-async function getDB() {
-  if (_db) return _db;
-  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js');
-  const { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
-  const app = initializeApp(FIREBASE_CONFIG);
-  _db = { fs: getFirestore(app), doc, getDoc, setDoc, onSnapshot, collection };
-  return _db;
+// ─────────────────────────────────────────────────────────────────────────────
+// PRICING ENGINE
+// contrato: 'Mensual' | 'Semestral' | 'Anual'
+// Devuelve precio POR LICENCIA POR MES (para el display de detalle)
+// El total se multiplica por qty y por los meses del período
+// ─────────────────────────────────────────────────────────────────────────────
+function getTiers(tipo, acuerdo) {
+  if (acuerdo==='REMAX') return tipo==='Agency'?T.rmAgn : tipo==='Premium'?T.rmPre : null;
+  if (acuerdo==='KW')    return tipo==='Agency'?T.kwAgn : tipo==='Premium'?T.kwPre : null;
+  if (acuerdo==='E&V')   return tipo==='Agency'?T.evAgn : tipo==='Premium'?T.evPre : null;
+  return tipo==='Agency'?T.agency : tipo==='Premium'?T.premium : null;
+}
+function getPriceLic(tipo, qty, acuerdo, contrato) {
+  if (!qty||qty<=0||!tipo||tipo==='Ninguna') return 0;
+  const tiers = getTiers(tipo, acuerdo);
+  if (!tiers) return 0;
+  for (const t of tiers) {
+    if (qty>=t.min && qty<=t.max) {
+      if (contrato==='Trimestral') return t.tri !== null ? t.tri : t.mes*3;
+      if (contrato==='Semestral')  return t.sem !== null ? t.sem : t.mes*6;
+      if (contrato==='Anual')      return t.ano !== null ? t.ano : t.mes*12;
+      return t.mes; // Mensual
+    }
+  }
+  return 0;
 }
 
-const store = {
-  async get(k) {
-    try {
-      const db = await getDB();
-      const ref = db.doc(db.fs, 'panel', k);
-      const snap = await db.getDoc(ref);
-      return snap.exists() ? snap.data().value : null;
-    } catch(e) { console.warn('Firestore get error', e); return null; }
-  },
-  async set(k, v) {
-    try {
-      const db = await getDB();
-      const ref = db.doc(db.fs, 'panel', k);
-      _localWrite = true;
-      await db.setDoc(ref, { value: v });
-      setTimeout(()=>{ _localWrite = false; }, 1000);
-    } catch(e) { console.warn('Firestore set error', e); }
-  }
-};
-
-function applyRemoteUpdate(k, v) {
-  if (_localWrite) return; // ignorar eco de cambios propios
-  if (k === 'remax_data_v2' && v && v.length) {
-    DATA = v;
-    updateSidebarCount();
-    populateSelects();
-    // re-render página activa
-    const ae = document.getElementById('sel-locales').value;
-    if (ae) renderLocales(ae);
-    const aeb = document.getElementById('sel-brokers').value;
-    if (aeb) renderBrokers(aeb);
-    if (document.getElementById('page-ae').classList.contains('active')) renderAE();
-    if (document.getElementById('page-resumen').classList.contains('active')) renderResumen();
-    if (document.getElementById('page-admin').classList.contains('active')) renderAdmin();
-    showSyncToast('🔄 Datos actualizados por otro usuario');
-  }
-  if (k === 'remax_contacted' && v) {
-    CONTACTED = v;
-    const ae = document.getElementById('sel-locales').value;
-    if (ae) renderLocales(ae);
-    if (document.getElementById('page-ae').classList.contains('active')) renderAE();
-    if (document.getElementById('page-resumen').classList.contains('active')) renderResumen();
-    showSyncToast('✅ Contactos sincronizados');
-  }
+function meses(contrato) {
+  if (contrato==='Mensual')    return 1;
+  if (contrato==='Trimestral') return 3;
+  if (contrato==='Semestral')  return 6;
+  if (contrato==='Anual')      return 12;
+  return 1;
 }
 
-function showSyncToast(msg) {
-  let t = document.getElementById('sync-toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'sync-toast';
-    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1A1A1A;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.opacity = '1';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+function calcS(s) {
+  const qa=+s.qtyA||0, qb=+s.qtyB||0;
+  const hasB = s.tipoB!=='Ninguna'&&qb>0;
+  const m = meses(s.contrato);
+  // pA/pB = price per lic for the full period
+  const pA = getPriceLic(s.tipoA, qa, s.acuerdo, s.contrato);
+  const pB = hasB ? getPriceLic(s.tipoB, qb, s.acuerdo, s.contrato) : 0;
+  // mensual reference = mes price (always)
+  const pAm = getPriceLic(s.tipoA, qa, s.acuerdo, 'Mensual');
+  const pBm = hasB ? getPriceLic(s.tipoB, qb, s.acuerdo, 'Mensual') : 0;
+  const mensualRef = qa*pAm + (hasB?qb*pBm:0);
+  const sub = qa*pA + (hasB?qb*pB:0);
+  const iva = sub*(T.iva/100);
+  const ahorro = m>1 ? mensualRef*m - sub : 0;
+
+  return {pA, pB, mensualRef, sub, iva, total:sub+iva, ahorro, m};
 }
 
-async function startRealTimeSync() {
-  try {
-    const db = await getDB();
-    const colRef = db.collection(db.fs, 'panel');
-    db.onSnapshot(colRef, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type === 'modified' || change.type === 'added') {
-          const k = change.doc.id;
-          const v = change.doc.data().value;
-          applyRemoteUpdate(k, v);
-        }
-      });
+const eur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
+function diffHtml(v, money=true) {
+  if (money&&Math.abs(v)<0.005) return '<span class="diff-gray">—</span>';
+  if (!money&&v===0) return '<span class="diff-gray">—</span>';
+  const cls = v>0?'diff-red':'diff-green';
+  return `<span class="${cls}">${v>0?'+':''}${money?eur(v):v}</span>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function readS(n) {
+  const g=id=>document.getElementById(`s${n}_${id}`);
+  return {tipoA:g('tipoA').value, tipoB:g('tipoB').value,
+    qtyA:+g('qtyA').value||0, qtyB:+g('qtyB').value||0,
+    contrato:g('contrato').value, acuerdo:g('acuerdo').value};
+}
+
+function render() {
+  // Bloqueo: Mensual solo bloqueado para 1 licencia en acuerdos (REMAX/KW/E&V)
+  // Estándar 1 seat Agency: solo Anual
+  // Todo lo demás permitido
+  [1,2].forEach(n => {
+    const tipoA   = document.getElementById('s'+n+'_tipoA').value;
+    const qtyA    = +document.getElementById('s'+n+'_qtyA').value || 0;
+    const acuerdo = document.getElementById('s'+n+'_acuerdo').value;
+    const sel     = document.getElementById('s'+n+'_contrato');
+
+    const isStd1     = (acuerdo === 'No' && tipoA === 'Agency' && qtyA === 1);
+    const isAcuerdo1 = (['REMAX','KW','E&V'].includes(acuerdo) && qtyA === 1);
+
+    Array.from(sel.options).forEach(o => {
+      o.disabled = false;
+      if (o.value === 'Mensual') o.disabled = isStd1 || isAcuerdo1;
+      if (o.value === 'Trimestral' || o.value === 'Semestral' || o.value === 'Anual') {
+        if (isStd1 && o.value !== 'Anual') o.disabled = true;
+      }
     });
-  } catch(e) { console.warn('Firestore listener error', e); }
-}
 
-async function init(){
-  const saved = await store.get('remax_data_v2');
-  DATA = saved && saved.length ? saved : SEED;
-  CONTACTED = (await store.get('remax_contacted')) || {};
-  populateSelects();
-  renderResumen();
-  updateSidebarCount();
-  // Restore sidebar collapsed state
-  if(localStorage.getItem('sb_collapsed')==='1'){
-    const sb = document.getElementById('sidebar');
-    sb.classList.add('collapsed');
-    const btn = sb.querySelector('.sidebar-toggle svg');
-    if(btn) btn.innerHTML = '<path d="M6 3l5 5-5 5"/>';
-  }
-  // Arrancar sync en tiempo real
-  startRealTimeSync();
-}
-
-function updateSidebarCount(){
-  document.getElementById('sidebar-count').textContent = DATA.length + ' locales cargados';
-}
-
-function populateSelects(){
-  ['sel-locales','sel-brokers'].forEach(id=>{
-    const s = document.getElementById(id);
-    const cur = s.value;
-    s.innerHTML = '<option value="">Selecciona un AE...</option>';
-    AE_ALL.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;s.appendChild(o);});
-    s.value = cur;
+    const cur = sel.value;
+    if (Array.from(sel.options).find(o=>o.value===cur)?.disabled) {
+      const first = Array.from(sel.options).find(o => !o.disabled);
+      if (first) sel.value = first.value;
+    }
   });
-}
+  const s1=readS(1), s2=readS(2);
+  const r1=calcS(s1), r2=calcS(s2);
 
-function toggleSidebar(){
-  const sb = document.getElementById('sidebar');
-  const collapsed = sb.classList.toggle('collapsed');
-  const btn = sb.querySelector('.sidebar-toggle svg');
-  btn.innerHTML = collapsed
-    ? '<path d="M6 3l5 5-5 5"/>'
-    : '<path d="M10 3L5 8l5 5"/>';
-  localStorage.setItem('sb_collapsed', collapsed ? '1' : '0');
-}
+  document.getElementById('sub1').textContent=`${s1.contrato} · ${s1.acuerdo==='REMAX'?'Acuerdo REMAX':'Sin acuerdo'}`;
+  document.getElementById('sub2').textContent=`${s2.contrato} · ${s2.acuerdo==='REMAX'?'Acuerdo REMAX':'Sin acuerdo'}`;
 
-function showPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active',['resumen','ae','locales','brokers','admin'][i]===id));
-  document.getElementById('page-'+id).classList.add('active');
-  const renders = {resumen:renderResumen,ae:renderAE,admin:renderAdmin};
-  if(renders[id]) renders[id]();
-}
+  function rs(r, s, sfx, c) {
+    const periodoLabel = s.contrato==='Mensual'?'mes':s.contrato==='Trimestral'?'trimestre':s.contrato==='Semestral'?'semestre':'año';
+    document.getElementById('detail'+sfx).innerHTML=`
+      <div class="detail-row"><span class="lbl">€/lic A · ${periodoLabel}</span><span class="val" style="color:${c}">${eur(r.pA)}</span></div>
+      <div class="detail-row"><span class="lbl">€/lic B · ${periodoLabel}</span><span class="val" style="color:${c}">${eur(r.pB)}</span></div>
+      <div class="detail-row"><span class="lbl">Ref. mensual equiv.</span><span class="val" style="color:${c}">${eur(r.mensualRef)}/mes</span></div>
+      ${r.ahorro>0?`<div class="saving-box"><span>Ahorro vs pago mensual</span><span>${eur(r.ahorro)}</span></div>`:''}
+    `;
+    document.getElementById('subtotals'+sfx).innerHTML=`
+      <div class="detail-row"><span class="lbl">Subtotal sin IVA (${r.m} mes${r.m>1?'es':''})</span><span class="val">${eur(r.sub)}</span></div>
+      <div class="detail-row"><span class="lbl">IVA (${T.iva}%)</span><span class="val">${eur(r.iva)}</span></div>
+    `;
+    document.getElementById('total'+sfx).textContent = eur(r.total);
+  }
+  rs(r1,s1,'1','#1b4f72');
+  rs(r2,s2,'2','#145a32');
 
-function badge(s){
-  const map={ONGOING:['b-on','ongoing'],WON:['b-wo','won'],LOST:['b-lo','lost']};
-  const [cls,lbl]=map[s]||['b-on',s];
-  return `<span class="badge ${cls}">${lbl}</span>`;
-}
-
-// ── RESUMEN ──────────────────────────────────────────────
-function renderResumen(){
-  const total=DATA.length,
-    won=DATA.filter(r=>r.status==='WON').length,
-    lost=DATA.filter(r=>r.status==='LOST').length,
-    ongoing=DATA.filter(r=>r.status==='ONGOING').length;
-  const contacted_on = DATA.filter(r=>r.status==='ONGOING'&&CONTACTED[r.oficina]).length;
-  const p=n=>Math.round(n/total*100);
-
-  const aeRows = AE_ALL.map(ae=>{
-    const on = DATA.filter(r=>r.ae===ae&&r.status==='ONGOING');
-    const ct = on.filter(r=>CONTACTED[r.oficina]).length;
-    const pct = on.length>0?Math.round(ct/on.length*100):0;
-    const c = AE_COL[ae]||{cls:'av-s'};
-    return `<tr>
-      <td><span class="avatar ${c.cls}" style="margin-right:6px;width:22px;height:22px;font-size:9px">${ae[0]}</span>${ae}</td>
-      <td>${on.length}</td>
-      <td>${ct} <span style="color:#aaa;font-size:11px">(${pct}%)</span></td>
-      <td>${on.length-ct}</td>
-    </tr>`;
+  // Variable
+  const fields=[
+    ['Tipo lic. A', s1.tipoA,    s2.tipoA,    false],
+    ['Tipo lic. B', s1.tipoB,    s2.tipoB,    false],
+    ['Cantidad A',  s1.qtyA,     s2.qtyA,     true],
+    ['Cantidad B',  s1.qtyB,     s2.qtyB,     true],
+    ['Contrato',    s1.contrato, s2.contrato, false],
+    ['Acuerdo',     s1.acuerdo,  s2.acuerdo,  false],
+  ];
+  document.getElementById('varFields').innerHTML = fields.map(([l,v1,v2,n])=>{
+    const eq=String(v1)===String(v2);
+    const val=eq
+      ?`<span class="diff-gray">Igual (${v1})</span>`
+      :n?diffHtml(+v1-+v2,false)
+      :`<span style="color:#1b4f72;font-weight:700">${v1}</span><span style="color:#ccc;margin:0 6px;font-size:11px">vs</span><span style="color:#145a32;font-weight:700">${v2}</span>`;
+    return `<div><div class="field-label">${l}</div><div class="cmp-field" style="background:rgba(108,52,131,.06);border:1.5px solid rgba(108,52,131,.18)">${val}</div></div>`;
   }).join('');
 
-  document.getElementById('resumen-content').innerHTML=`
-    <div class="metric-grid g3">
-      <div class="metric"><div class="metric-label">Ongoing</div><div class="metric-num" style="color:#1D4ED8">${ongoing}</div><div class="metric-sub">${contacted_on} contactados · ${ongoing-contacted_on} pendientes</div></div>
-      <div class="metric"><div class="metric-label">Won</div><div class="metric-num" style="color:#166534">${won}</div><div class="metric-sub">${p(won)}% del total</div></div>
-      <div class="metric"><div class="metric-label">Lost</div><div class="metric-num" style="color:#991B1B">${lost}</div><div class="metric-sub">${p(lost)}% del total</div></div>
-    </div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="section-title" style="margin-bottom:12px">Distribución global · ${total} cuentas</div>
-      <div class="bar-wrap">
-        <div class="bar-seg" style="width:${p(ongoing)}%;background:#3B82F6">${p(ongoing)}%</div>
-        <div class="bar-seg" style="width:${p(won)}%;background:#22C55E">${p(won)}%</div>
-        <div class="bar-seg" style="width:${p(lost)}%;background:#EF4444">${p(lost)}%</div>
-      </div>
-      <div style="display:flex;gap:16px;font-size:12px;color:#888;margin-top:8px">
-        <span><span style="width:8px;height:8px;border-radius:50%;background:#3B82F6;display:inline-block;margin-right:5px"></span>Ongoing</span>
-        <span><span style="width:8px;height:8px;border-radius:50%;background:#22C55E;display:inline-block;margin-right:5px"></span>Won</span>
-        <span><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:inline-block;margin-right:5px"></span>Lost</span>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title" style="margin-bottom:12px">Seguimiento por AE — cuentas ongoing</div>
-      <table style="border:none">
-        <thead><tr><th>AE</th><th>Ongoing</th><th>Contactados</th><th>Sin contactar</th></tr></thead>
-        <tbody>${aeRows}</tbody>
-      </table>
-    </div>`;
+  const diffs=[
+    ['€/lic A período', r1.pA-r2.pA,             false],
+    ['€/lic B período', r1.pB-r2.pB,             false],
+    ['Subtotal sin IVA',r1.sub-r2.sub,            true],
+    [`IVA (${T.iva}%)`, r1.iva-r2.iva,            true],
+  ];
+  document.getElementById('varDetail').innerHTML = diffs.map(([l,v,m])=>
+    `<div class="detail-row"><span class="lbl">${l}</span><span>${diffHtml(v,m)}</span></div>`
+  ).join('');
+
+  const td=r1.total-r2.total, el=document.getElementById('totalVar');
+  if(Math.abs(td)<0.005){el.style.color='#fff';el.textContent='Igual';}
+  else{el.style.color=td>0?'#ff8a80':'#69f0ae';el.textContent=(td>0?'+':'')+eur(td);}
 }
 
-// ── POR AE ──────────────────────────────────────────────
-function renderAE(){
-  const sinA = DATA.filter(r=>r.ae==='Sin asignar');
-  const pool_on = sinA.filter(r=>r.status==='ONGOING').length;
-  const pool_ct = sinA.filter(r=>r.status==='ONGOING'&&CONTACTED[r.oficina]).length;
-  const pool_nc = pool_on - pool_ct;
+// ─────────────────────────────────────────────────────────────────────────────
+// PANEL DE EDICIÓN
+// ─────────────────────────────────────────────────────────────────────────────
+function buildPanel() {
+  const body=document.getElementById('panelBody');
+  body.innerHTML='';
+  body.appendChild(makeGlobalSection());
 
-  const rows = AE_ACTIVE.map(ae=>{
-    const ongoing = DATA.filter(r=>r.ae===ae&&r.status==='ONGOING');
-    const ct = ongoing.filter(r=>CONTACTED[r.oficina]).length;
-    const nc = ongoing.length - ct;
-    const c = AE_COL[ae];
-    return `<tr>
-      <td><span class="avatar ${c.cls}" style="margin-right:8px">${ae[0]}</span><strong>${ae}</strong></td>
-      <td style="font-size:16px;font-weight:600">${ongoing.length}</td>
-      <td><span class="badge b-ct">${ct} contactados</span></td>
-      <td><span class="badge b-nc">${nc} sin contactar</span></td>
-    </tr>`;
-  }).join('');
-
-  const totOn = AE_ACTIVE.reduce((s,ae)=>s+DATA.filter(r=>r.ae===ae&&r.status==='ONGOING').length,0);
-  const totCt = AE_ACTIVE.reduce((s,ae)=>s+DATA.filter(r=>r.ae===ae&&r.status==='ONGOING'&&CONTACTED[r.oficina]).length,0);
-
-  document.getElementById('ae-content').innerHTML=`
-    <div class="section-header"><span class="section-title">AEs activos — solo ongoing</span></div>
-    <table style="margin-bottom:24px">
-      <thead><tr><th>AE</th><th>Ongoing</th><th>Contactados</th><th>Sin contactar</th></tr></thead>
-      <tbody>${rows}<tr class="total-row"><td>Total</td><td>${totOn}</td><td><span class="badge b-ct">${totCt}</span></td><td><span class="badge b-nc">${totOn-totCt}</span></td></tr></tbody>
-    </table>
-    <div class="divider"></div>
-    <div class="section-header"><span class="section-title">Pool sin asignar — a trabajar este mes</span></div>
-    <div class="metric-grid g4">
-      <div class="metric" style="border-color:#6EE7B7"><div class="metric-label">Por contactar</div><div class="metric-num" style="color:#065F46;font-size:22px">${pool_nc}</div><div class="metric-sub">ongoing sin owner</div></div>
-      <div class="metric" style="border-color:#FCD34D"><div class="metric-label">Contactados</div><div class="metric-num" style="color:#92400E;font-size:22px">${pool_ct}</div></div>
-      <div class="metric"><div class="metric-label">Won (cerrados)</div><div class="metric-num" style="color:#166534;font-size:22px">${sinA.filter(r=>r.status==='WON').length}</div></div>
-      <div class="metric"><div class="metric-label">Lost (descartados)</div><div class="metric-num" style="color:#991B1B;font-size:22px">${sinA.filter(r=>r.status==='LOST').length}</div></div>
-    </div>`;
+  [
+    {title:'Agency — Estándar',  key:'agency', color:'#1b4f72', bg:'#d6eaf8'},
+    {title:'Premium — Estándar', key:'premium',color:'#145a32', bg:'#d5f5e3'},
+    {title:'Agency — REMAX',     key:'rmAgn',  color:'#c0392b', bg:'#fdebd0'},
+    {title:'Premium — REMAX',    key:'rmPre',  color:'#6c3483', bg:'#e8daef'},
+    {title:'Agency — KW',        key:'kwAgn',  color:'#b7950b', bg:'#fef9e7'},
+    {title:'Premium — KW',       key:'kwPre',  color:'#b7950b', bg:'#fef9e7'},
+    {title:'Agency — E&V',       key:'evAgn',  color:'#1a5276', bg:'#d6eaf8'},
+    {title:'Premium — E&V',      key:'evPre',  color:'#1a5276', bg:'#d6eaf8'},
+  ].forEach(s => body.appendChild(makeTierSection(s)));
 }
 
-// ── LOCALES ──────────────────────────────────────────────
-function changeStatus(oficina, newStatus){
-  const idx = DATA.findIndex(r=>r.oficina===oficina && r.status==='ONGOING');
-  if(idx<0) return;
-  DATA[idx].status = newStatus;
-  DATA[idx].ae = 'Sin asignar';
-  // Remove from contacted
-  delete CONTACTED[oficina];
-  store.set('remax_contacted', CONTACTED);
-  store.set('remax_data_v2', DATA);
-  updateSidebarCount();
-  populateSelects();
-  const ae = document.getElementById('sel-locales').value;
-  if(ae) renderLocales(ae);
-  if(document.getElementById('page-ae').classList.contains('active')) renderAE();
-  if(document.getElementById('page-resumen').classList.contains('active')) renderResumen();
-}
-
-function toggleContact(of){
-  CONTACTED[of] = !CONTACTED[of];
-  store.set('remax_contacted', CONTACTED);
-  const ae = document.getElementById('sel-locales').value;
-  if(ae) renderLocales(ae);
-  if(document.getElementById('page-ae').classList.contains('active')) renderAE();
-  if(document.getElementById('page-resumen').classList.contains('active')) renderResumen();
-}
-
-function renderLocales(ae){
-  const cont = document.getElementById('locales-content');
-  if(!ae){cont.innerHTML='<div class="empty">Selecciona un AE para ver sus locales</div>';return;}
-  let rows = DATA.filter(r=>r.ae===ae);
-  if(ae==='Sin asignar') rows = rows.filter(r=>r.status==='ONGOING');
-
-  const totA=rows.reduce((s,r)=>s+r.agentes,0),totB=rows.reduce((s,r)=>s+r.brokers,0),
-        totM=rows.reduce((s,r)=>s+r.managers,0),totC=rows.reduce((s,r)=>s+r.coordinadores,0);
-  const contacted_count = rows.filter(r=>CONTACTED[r.oficina]).length;
-
-  cont.innerHTML=`
-    <div class="metric-grid g4" style="margin-bottom:16px">
-      <div class="metric"><div class="metric-label">Agentes</div><div class="metric-num" style="font-size:22px">${totA}</div></div>
-      <div class="metric"><div class="metric-label">Brokers</div><div class="metric-num" style="font-size:22px">${totB}</div></div>
-      <div class="metric"><div class="metric-label">Managers</div><div class="metric-num" style="font-size:22px">${totM}</div></div>
-      <div class="metric"><div class="metric-label">Coordinadores</div><div class="metric-num" style="font-size:22px">${totC}</div></div>
-    </div>
-    ${ae!=='Sin asignar'?`<div style="font-size:12px;color:#888;margin-bottom:16px">${contacted_count} de ${rows.length} locales marcados como contactados</div>`:''}
-    ${rows.map(r=>{
-      const isCt = !!CONTACTED[r.oficina];
-      const loc = [r.ciudad,r.provincia].filter(Boolean).join(', ') || 'Sin ubicación';
-      const icCol = r.status==='ONGOING'?'#1D4ED8':r.status==='WON'?'#166534':'#991B1B';
-      const icBg  = r.status==='ONGOING'?'#EFF6FF':r.status==='WON'?'#F0FDF4':'#FEF2F2';
-      return `<div class="card${isCt?' contacted':''}">
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          <div class="of-icon" style="background:${icBg};color:${icCol}">${r.oficina.slice(0,2).toUpperCase()}</div>
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-              <span style="font-weight:600;font-size:14px">${r.oficina}</span>
-              ${badge(r.status)}
-              ${isCt?'<span class="badge b-ct">✓ contactado</span>':''}
-            </div>
-            <div style="font-size:12px;color:#888">${loc}${r.zona?' · <span style="color:#aaa">'+r.zona+'</span>':''}</div>
-            ${r.direccion&&r.direccion!='nan'?`<div style="font-size:11px;color:#aaa;margin-top:2px">${r.direccion}</div>`:''}
-            ${r.email&&r.email!='nan'?`<div style="font-size:11px;color:#aaa;margin-top:1px">${r.email}</div>`:''}
-          </div>
-          <div style="flex-shrink:0;display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-            ${r.status==='ONGOING'
-              ? `${isCt
-                  ?`<button class="btn-contacted" onclick="toggleContact('${r.oficina.replace(/'/g,"\\'")}')">✓ Contactado</button>
-                    <button class="btn-uncontact" onclick="toggleContact('${r.oficina.replace(/'/g,"\\'")}')">deshacer</button>`
-                  :`<button class="btn-contact" onclick="toggleContact('${r.oficina.replace(/'/g,"\\'")}')">Marcar contactado</button>`
-                }
-                <div style="display:flex;gap:4px;margin-top:2px">
-                  <button onclick="if(confirm('¿Marcar ${r.oficina} como WON? Se moverá al pool sin asignar.'))changeStatus('${r.oficina.replace(/'/g,"\\'")}','WON')" 
-                    style="padding:3px 8px;font-size:10px;border-radius:4px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;cursor:pointer">→ Won</button>
-                  <button onclick="if(confirm('¿Marcar ${r.oficina} como LOST? Se moverá al pool sin asignar.'))changeStatus('${r.oficina.replace(/'/g,"\\'")}','LOST')" 
-                    style="padding:3px 8px;font-size:10px;border-radius:4px;border:1px solid #FECACA;background:#FEF2F2;color:#991B1B;cursor:pointer">→ Lost</button>
-                </div>`
-              : `<span class="badge ${r.status==='WON'?'b-wo':'b-lo'}" style="font-size:12px">${r.status}</span>`
-            }
-          </div>
-        </div>
-        <div class="pill-row">
-          <span class="pill">Agentes: ${r.agentes}</span>
-          <span class="pill">Brokers: ${r.brokers}</span>
-          <span class="pill">Managers: ${r.managers}</span>
-          <span class="pill">Coord: ${r.coordinadores}</span>
-        </div>
-      </div>`;
-    }).join('')}`;
-}
-
-// ── BROKERS ──────────────────────────────────────────────
-function renderBrokers(ae){
-  const cont = document.getElementById('brokers-content');
-  if(!ae){cont.innerHTML='<div class="empty">Selecciona un AE para ver sus brokers</div>';return;}
-  let rows = DATA.filter(r=>r.ae===ae);
-  if(ae==='Sin asignar') rows = rows.filter(r=>r.status==='ONGOING');
-  const bMap={};
-  rows.forEach(r=>r.broker_list.forEach(b=>{
-    const k=b.email||b.nombre;
-    if(!bMap[k]){bMap[k]={...b,oficinas:[]};}
-    bMap[k].oficinas.push({oficina:r.oficina,status:r.status});
-  }));
-  const brokers=Object.values(bMap);
-  const c=AE_COL[ae]||{bg:'#F8F8F7',txt:'#555',cls:'av-s'};
-  cont.innerHTML=`
-    <div style="font-size:12px;color:#888;margin-bottom:16px">${brokers.length} brokers únicos · ${rows.length} locales</div>
-    ${brokers.map(b=>{
-      const ini=b.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-      const contact=[b.movil,b.email].filter(s=>s&&s.trim()&&s!='nan').join(' · ');
-      return `<div class="card">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <div class="avatar avatar-lg ${c.cls}">${ini}</div>
-          <div><div style="font-weight:600;font-size:14px">${b.nombre}</div>
-          <div style="font-size:12px;color:#888;margin-top:2px">${contact||'Sin contacto'}</div></div>
-        </div>
-        <div style="font-size:12px;color:#888;margin-bottom:8px">${b.oficinas.length} local${b.oficinas.length!==1?'es':''}:</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${b.oficinas.map(o=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:4px;border:1px solid #E5E5E3;color:#555">${o.oficina} ${badge(o.status)}</span>`).join('')}
-        </div>
-      </div>`;
-    }).join('')}`;
-}
-
-// ── ADMIN ──────────────────────────────────────────────
-let uploadedFiles = {};
-
-function renderAdmin(){
-  document.getElementById('admin-content').innerHTML=`
-    <div class="alert alert-info" style="margin-bottom:20px">
-      Carga los archivos de agentes y oficinas para actualizar datos del equipo. La asignación de AE y estado se edita directamente en la tabla de abajo.
-    </div>
-
-    <div class="section-title" style="margin-bottom:16px">Archivos base (solo carga)</div>
-
-    ${[
-      {key:'agentes',label:'Roster de agentes',desc:'Columnas requeridas: Nombre, Apellidos, Puesto, Oficina, Email, Móvil'},
-      {key:'oficinas',label:'Roster de oficinas',desc:'Columnas requeridas: Nombre, Zona, Teléfono, Email, Ciudad, Provincia, Dirección'}
-    ].map(f=>`
-      <div class="card" style="margin-bottom:10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div>
-            <div style="font-weight:600;font-size:13px;margin-bottom:3px">${f.label}</div>
-            <div style="font-size:11px;color:#aaa">${f.desc}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span id="file-status-${f.key}" style="font-size:12px;color:#aaa">sin cargar</span>
-            <label style="cursor:pointer">
-              <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(event,'${f.key}')">
-              <span class="btn btn-sm">Cargar archivo</span>
-            </label>
-          </div>
-        </div>
-      </div>`).join('')}
-
-    <div id="process-btn-wrap" style="margin:20px 0;display:none">
-      <button class="btn btn-primary" onclick="processAllFiles()">Regenerar panel con nuevos archivos</button>
-    </div>
-    <div id="process-log"></div>
-
-    <div class="divider"></div>
-
-    <!-- TABLA DE ASIGNACIÓN EDITABLE -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+function makeGlobalSection() {
+  const d=document.createElement('div');
+  d.className='tarifa-section';
+  d.innerHTML=`
+    <div class="tarifa-title">Configuración general <span class="tarifa-badge" style="background:#eee;color:#555">Global</span></div>
+    <div class="global-grid">
       <div>
-        <div class="section-title">Asignación de AE y estado</div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Edita directamente en la tabla. Los cambios se aplican al instante.</div>
+        <div class="field-label" style="margin-bottom:6px">IVA (%)</div>
+        <input type="number" min="0" max="100" step="0.1" value="${T.iva}" oninput="T.iva=+this.value||0;saveT()">
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-sm" onclick="addAsignRow()">+ Nueva oficina</button>
-        <button class="btn btn-sm" onclick="exportAsignExcel()">Exportar Excel</button>
-        <label style="cursor:pointer">
-          <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importAsignExcel(event)">
-          <span class="btn btn-sm">Importar Excel</span>
-        </label>
-      </div>
-    </div>
-
-    <div style="margin-bottom:10px">
-      <input type="text" id="asign-search" placeholder="Buscar oficina..." oninput="filterAsignTable()" 
-        style="padding:7px 12px;border:1px solid #E5E5E3;border-radius:6px;font-size:13px;width:260px">
-    </div>
-
-    <div style="overflow-x:auto;border-radius:8px;border:1px solid #E5E5E3">
-      <table id="asign-table" style="border:none;border-radius:0">
-        <thead>
-          <tr>
-            <th style="width:180px">Oficina</th>
-            <th style="width:140px">AE</th>
-            <th style="width:120px">Estado</th>
-            <th style="width:60px;text-align:center">Acción</th>
-          </tr>
-        </thead>
-        <tbody id="asign-tbody">
-          ${buildAsignRows()}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-title" style="margin-bottom:14px">Estado del sistema</div>
-    <div class="metric-grid g3" style="margin-bottom:20px">
-      <div class="metric"><div class="metric-label">Locales cargados</div><div class="metric-num" style="font-size:22px">${DATA.length}</div></div>
-      <div class="metric"><div class="metric-label">Contactos guardados</div><div class="metric-num" style="font-size:22px">${Object.values(CONTACTED).filter(Boolean).length}</div></div>
-      <div class="metric"><div class="metric-label">Sin asignar (ongoing)</div><div class="metric-num" style="font-size:22px">${DATA.filter(r=>r.ae==='Sin asignar'&&r.status==='ONGOING').length}</div></div>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn" onclick="resetContacted()">Limpiar contactos marcados</button>
-      <button class="btn" onclick="exportData()">Exportar JSON</button>
-      <button class="btn" onclick="restoreSeed()">Restaurar datos originales</button>
     </div>`;
-
-  checkFileStatuses();
+  return d;
 }
 
-function buildAsignRows(){
-  return DATA.map((r,i)=>{
-    const statusColor = r.status==='ONGOING'?'#1D4ED8':r.status==='WON'?'#166534':'#991B1B';
-    const statusBg = r.status==='ONGOING'?'#EFF6FF':r.status==='WON'?'#F0FDF4':'#FEF2F2';
-    const isNew = r.isNew ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;border-radius:3px;padding:1px 5px;border:1px solid #FCD34D">nueva</span>' : '';
-    return `<tr id="asign-row-${i}" data-oficina="${r.oficina.toLowerCase()}">
-      <td style="font-weight:500">${r.oficina} ${isNew}</td>
-      <td>
-        <select onchange="updateAsignRow(${i},'ae',this.value)" style="margin:0;min-width:auto;padding:4px 8px;font-size:12px;width:120px">
-          ${['JUAN','LAIA','RAISA','Sin asignar'].map(ae=>`<option value="${ae}"${r.ae===ae?' selected':''}>${ae}</option>`).join('')}
-        </select>
-      </td>
-      <td>
-        <select onchange="updateAsignRow(${i},'status',this.value)" style="margin:0;min-width:auto;padding:4px 8px;font-size:12px;width:100px;color:${statusColor};background:${statusBg};border-color:${statusColor}40">
-          ${['ONGOING','WON','LOST'].map(s=>`<option value="${s}"${r.status===s?' selected':''}>${s}</option>`).join('')}
-        </select>
-      </td>
-      <td style="text-align:center">
-        <button class="btn btn-sm" style="padding:2px 8px;font-size:11px;color:#991B1B;border-color:#FECACA" onclick="deleteAsignRow(${i})">✕</button>
-      </td>
-    </tr>`;
-  }).join('');
+function makeTierSection({title, key, color, bg, cols}) {
+  const d=document.createElement('div');
+  d.className='tarifa-section';
+  const badge = key.startsWith('rm')?'REMAX':key.startsWith('kw')?'KW':key.startsWith('ev')?'E&V':'Estándar';
+  let html=`<div class="tarifa-title">${title} <span class="tarifa-badge" style="background:${bg};color:${color}">${badge}</span></div>`;
+  html+=`<table class="tarifa-table"><thead><tr><th>Desde</th><th>Hasta</th><th>Mensual</th><th>Trimestral</th><th>Semestral</th><th>Anual</th><th></th></tr></thead><tbody id="tbody_${key}"></tbody></table>`;
+  html+=`<button class="add-row-btn" onclick="addTier('${key}')">+ Añadir tramo</button>`;
+  d.innerHTML=html;
+  setTimeout(()=>renderRows(key),0);
+  return d;
 }
 
-async function updateAsignRow(idx, field, value){
-  DATA[idx][field]=value;
-  await store.set('remax_data_v2', DATA);
-  updateSidebarCount();
-  populateSelects();
-  // Update metric counts without full re-render
-  const adminContent=document.getElementById('admin-content');
-  if(adminContent){
-    const metrics=adminContent.querySelectorAll('.metric-num');
-    if(metrics[0]) metrics[0].textContent=DATA.length;
-    if(metrics[2]) metrics[2].textContent=DATA.filter(r=>r.ae==='Sin asignar'&&r.status==='ONGOING').length;
-  }
-}
-
-function filterAsignTable(){
-  const q=(document.getElementById('asign-search').value||'').toLowerCase();
-  document.querySelectorAll('#asign-tbody tr').forEach(tr=>{
-    tr.style.display=(!q||tr.dataset.oficina.includes(q))?'':'none';
+function renderRows(key) {
+  const tbody=document.getElementById('tbody_'+key);
+  if(!tbody) return;
+  tbody.innerHTML='';
+  T[key].forEach((t,i)=>{
+    const tr=document.createElement('tr');
+    const maxV  = t.max>=9999?'':t.max;
+    const triVal = t.tri===null||t.tri===undefined?'':t.tri;
+    const semVal = t.sem===null||t.sem===undefined?'':t.sem;
+    tr.innerHTML=`
+      <td><input type="number" min="0" value="${t.min}" oninput="T['${key}'][${i}].min=+this.value||0;saveT()"></td>
+      <td><input type="number" min="0" value="${maxV}" placeholder="∞" oninput="T['${key}'][${i}].max=+this.value||9999;saveT()"></td>
+      <td><input type="number" min="0" step="1" value="${t.mes}" oninput="T['${key}'][${i}].mes=+this.value||0;saveT()"></td>
+      <td><input type="number" min="0" step="1" value="${triVal}" placeholder="—" oninput="T['${key}'][${i}].tri=this.value===''?null:(+this.value||0);saveT()"></td>
+      <td><input type="number" min="0" step="1" value="${semVal}" placeholder="—" oninput="T['${key}'][${i}].sem=this.value===''?null:(+this.value||0);saveT()"></td>
+      <td><input type="number" min="0" step="1" value="${t.ano}" oninput="T['${key}'][${i}].ano=+this.value||0;saveT()"></td>
+      <td><button class="del-btn" onclick="delTier('${key}',${i})" title="Eliminar">×</button></td>`;
+    tbody.appendChild(tr);
   });
 }
 
-async function addAsignRow(){
-  const nombre=prompt('Nombre de la nueva oficina:');
-  if(!nombre||!nombre.trim())return;
-  const newRow={oficina:nombre.trim().toUpperCase(),ae:'Sin asignar',status:'ONGOING',
-    ciudad:'',provincia:'',zona:'',telefono:'',email:'',direccion:'',
-    agentes:0,brokers:0,managers:0,coordinadores:0,broker_list:[]};
-  DATA.push(newRow);
-  await store.set('remax_data_v2',DATA);
-  updateSidebarCount();
-  populateSelects();
-  // Re-render the table body
-  const tbody=document.getElementById('asign-tbody');
-  if(tbody) tbody.innerHTML=buildAsignRows();
+function addTier(key) {
+  const last=T[key][T[key].length-1];
+  const newMin=last?(last.max>=9999?last.min+10:last.max+1):1;
+  T[key].push({min:newMin,max:9999,mes:0,tri:null,sem:null,ano:0});
+  saveT(); renderRows(key);
+}
+function delTier(key,i) {
+  if(T[key].length<=1){alert('Debe quedar al menos un tramo.');return;}
+  T[key].splice(i,1); saveT(); renderRows(key);
 }
 
-async function deleteAsignRow(idx){
-  const nombre=DATA[idx].oficina;
-  if(!confirm(`¿Eliminar "${nombre}" de la lista?`))return;
-  DATA.splice(idx,1);
-  await store.set('remax_data_v2',DATA);
-  updateSidebarCount();
-  populateSelects();
-  const tbody=document.getElementById('asign-tbody');
-  if(tbody) tbody.innerHTML=buildAsignRows();
+function openPanel(){buildPanel();document.getElementById('overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closePanel(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))closePanel();}
+
+let _tt;
+function showToast(){
+  const t=document.getElementById('toast'); t.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),1800);
 }
 
-function exportAsignExcel(){
-  const rows=DATA.map(r=>({'Oficina':r.oficina,'ACCOUNT OWNER':r.ae,'condicion':r.status}));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Asignacion');
-  XLSX.writeFile(wb,'asignacion_remax_'+new Date().toISOString().slice(0,10)+'.xlsx');
+function setMode(m){
+  document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.toggle('active',+b.dataset.mode===m));
+  document.getElementById('grid').className='grid mode-'+m;
+  document.getElementById('card2').style.display=m>=2?'flex':'none';
+  document.getElementById('cardVar').style.display=m===3?'flex':'none';
 }
 
-async function importAsignExcel(event){
-  const file=event.target.files[0];
-  if(!file)return;
-  try{
-    const ab=await file.arrayBuffer();
-    const wb=XLSX.read(ab,{type:'arraybuffer'});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-    // Merge: update ae+status for existing oficinas, keep broker/team data
-    let updated=0,added=0;
-    rows.forEach(row=>{
-      const of=String(row.Oficina||row.oficina||'').trim().toUpperCase();
-      const ao=String(row['ACCOUNT OWNER']||row.ae||'').trim();
-      const cond=String(row.condicion||row.status||'').trim().toUpperCase();
-      let ae,status;
-      if(['WON','LOST'].includes(ao.toUpperCase())){ae='Sin asignar';status=ao.toUpperCase();}
-      else if(!ao||ao==='nan'){ae='Sin asignar';status='ONGOING';}
-      else{ae=ao;status=['WON','LOST','ONGOING'].includes(cond)?cond:'ONGOING';}
-      const existing=DATA.findIndex(d=>d.oficina.toUpperCase()===of);
-      if(existing>=0){DATA[existing].ae=ae;DATA[existing].status=status;updated++;}
-      else{DATA.push({oficina:of,ae,status,ciudad:'',provincia:'',zona:'',telefono:'',email:'',direccion:'',agentes:0,brokers:0,managers:0,coordinadores:0,broker_list:[]});added++;}
-    });
-    await store.set('remax_data_v2',DATA);
-    updateSidebarCount();
-    populateSelects();
-    const tbody=document.getElementById('asign-tbody');
-    if(tbody) tbody.innerHTML=buildAsignRows();
-    log('success',`Importado: ${updated} oficinas actualizadas, ${added} nuevas.`);
-  }catch(e){log('warn','Error al importar: '+e.message);}
-}
-
-async function checkFileStatuses(){
-  for(const k of ['agentes','oficinas']){
-    const el=document.getElementById('file-status-'+k);
-    if(!el)continue;
-    const d=await store.get('remax_file_'+k);
-    if(d){el.textContent='✓ '+d.name;el.style.color='#166534';}
-  }
-}
-
-async function handleFile(event,key){
-  const file=event.target.files[0];
-  if(!file)return;
-  const el=document.getElementById('file-status-'+key);
-  el.textContent='Cargando...';el.style.color='#888';
-  try{
-    const ab=await file.arrayBuffer();
-    const wb=XLSX.read(ab,{type:'arraybuffer'});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const json=XLSX.utils.sheet_to_json(ws,{defval:''});
-    uploadedFiles[key]={name:file.name,rows:json};
-    await store.set('remax_file_'+key,{name:file.name,rows:json});
-    el.textContent='✓ '+file.name;el.style.color='#166534';
-    const allLoaded=uploadedFiles.agentes&&uploadedFiles.oficinas||
-      (await Promise.all(['agentes','oficinas'].map(k=>store.get('remax_file_'+k)))).every(Boolean);
-    document.getElementById('process-btn-wrap').style.display=allLoaded?'block':'none';
-    log('info',`"${file.name}" cargado — ${json.length} filas`);
-  }catch(e){el.textContent='Error: '+e.message;el.style.color='#991B1B';}
-}
-
-async function processAllFiles(){
-  log('info','Procesando archivos...');
-  try{
-    const [fa,fo]=await Promise.all(['agentes','oficinas'].map(k=>store.get('remax_file_'+k)));
-    if(!fa||!fo){log('warn','Faltan archivos. Carga agentes y oficinas primero.');return;}
-    const agentes=fa.rows,oficinas=fo.rows;
-    const ofMap={};
-    oficinas.forEach(o=>ofMap[String(o.Nombre||'').trim().toUpperCase()]=o);
-    const puestoMap={'Agente Asociado':'agentes','Broker':'brokers','Manager Administrador':'managers','Manager Asociado':'managers','Coordinador/a':'coordinadores'};
-    const statsMap={},brokerMap={};
-    agentes.forEach(a=>{
-      const of=String(a.Oficina||'').trim();
-      const cat=puestoMap[String(a.Puesto||'').trim()];
-      if(!statsMap[of])statsMap[of]={agentes:0,brokers:0,managers:0,coordinadores:0};
-      if(cat)statsMap[of][cat]++;
-      if(String(a.Puesto||'').trim()==='Broker'){
-        if(!brokerMap[of])brokerMap[of]=[];
-        brokerMap[of].push({nombre:String(a.Nombre||'')+' '+String(a.Apellidos||''),email:String(a.Email||''),movil:String(a.Móvil||a['Móvil']||a.Movil||'')});
-      }
-    });
-
-    // Build set of all office names currently in DATA (preserve their ae+status)
-    const existingMap = {};
-    DATA.forEach((row,i)=>{ existingMap[row.oficina.toUpperCase()] = i; });
-
-    // Track new offices
-    let newCount = 0;
-    const allRosterOffices = new Set([...Object.keys(ofMap), ...Object.keys(statsMap)]);
-
-    allRosterOffices.forEach(ofKey=>{
-      const of = ofKey; // uppercase key
-      const ofData = ofMap[of] || {};
-      const displayName = ofData.Nombre || of;
-      const stats = statsMap[displayName] || statsMap[of] || {agentes:0,brokers:0,managers:0,coordinadores:0};
-      const brokers = brokerMap[displayName] || brokerMap[of] || [];
-
-      if(existingMap[of] !== undefined){
-        // Update team data but NEVER touch ae or status
-        const idx = existingMap[of];
-        if(ofData.Ciudad) DATA[idx].ciudad = String(ofData.Ciudad||'');
-        if(ofData.Provincia) DATA[idx].provincia = String(ofData.Provincia||'');
-        if(ofData.Zona) DATA[idx].zona = String(ofData.Zona||'');
-        DATA[idx].telefono = String(ofData.Teléfono||ofData.Telefono||DATA[idx].telefono||'');
-        DATA[idx].email = String(ofData.Email||DATA[idx].email||'');
-        DATA[idx].direccion = String(ofData.Dirección||ofData.Direccion||DATA[idx].direccion||'');
-        DATA[idx].agentes = stats.agentes;
-        DATA[idx].brokers = stats.brokers;
-        DATA[idx].managers = stats.managers;
-        DATA[idx].coordinadores = stats.coordinadores;
-        if(brokers.length) DATA[idx].broker_list = brokers;
-      } else {
-        // New office — add as Sin asignar / ONGOING
-        DATA.push({
-          oficina: displayName,
-          ae: 'Sin asignar',
-          status: 'ONGOING',
-          ciudad: String(ofData.Ciudad||''),
-          provincia: String(ofData.Provincia||''),
-          zona: String(ofData.Zona||''),
-          telefono: String(ofData.Teléfono||ofData.Telefono||''),
-          email: String(ofData.Email||''),
-          direccion: String(ofData.Dirección||ofData.Direccion||''),
-          agentes: stats.agentes,
-          brokers: stats.brokers,
-          managers: stats.managers,
-          coordinadores: stats.coordinadores,
-          broker_list: brokers,
-          isNew: true
-        });
-        newCount++;
-      }
-    });
-
-    await store.set('remax_data_v2', DATA);
-    updateSidebarCount();
-    populateSelects();
-    const tbody=document.getElementById('asign-tbody');
-    if(tbody) tbody.innerHTML=buildAsignRows();
-    const msg = newCount>0
-      ? `Actualizado. Datos de equipo frescos. <strong>${newCount} nueva${newCount>1?'s':''} oficina${newCount>1?'s':''}</strong> añadida${newCount>1?'s':''} como Sin asignar/ONGOING — revísala${newCount>1?'s':''} en la tabla.`
-      : `Datos de equipo actualizados. ${DATA.length} locales. Sin oficinas nuevas.`;
-    log('success', msg);
-  }catch(e){log('warn','Error al procesar: '+e.message);console.error(e);}
-}
-
-function log(type,msg){
-  const el=document.getElementById('process-log');
-  if(!el)return;
-  const cls={info:'alert-info',success:'alert-success',warn:'alert-warning'}[type]||'alert-info';
-  el.innerHTML=`<div class="alert ${cls}">${msg}</div>`;
-}
-
-async function resetContacted(){
-  if(!confirm('¿Limpiar todos los marcadores de contacto?'))return;
-  CONTACTED={};
-  await store.set('remax_contacted',{});
-  renderAdmin();
-}
-
-async function restoreSeed(){
-  if(!confirm('¿Restaurar los datos originales? Esto sobreescribirá los datos actuales.'))return;
-  DATA=[...SEED];
-  await store.set('remax_data_v2',DATA);
-  updateSidebarCount();
-  renderAdmin();
-  log('success','Datos originales restaurados. '+DATA.length+' locales.');
-}
-
-function exportData(){
-  const blob=new Blob([JSON.stringify({data:DATA,contacted:CONTACTED},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='remax_export_'+Date.now()+'.json';a.click();
-}
-
-init();
+render();
 </script>
 </body>
 </html>

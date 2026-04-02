@@ -348,7 +348,6 @@ async function startRealTimeSync() {
 }
 
 async function init(){
-  await store.init();
   const savedAE = await store.get('remax_ae_active');
   if(savedAE&&Array.isArray(savedAE)){
     AE_ACTIVE.length=0; savedAE.forEach(a=>AE_ACTIVE.push(a));

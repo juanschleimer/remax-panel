@@ -348,6 +348,12 @@ async function startRealTimeSync() {
 }
 
 async function init(){
+  await store.init();
+  const savedAE = await store.get('remax_ae_active');
+  if(savedAE&&Array.isArray(savedAE)){
+    AE_ACTIVE.length=0; savedAE.forEach(a=>AE_ACTIVE.push(a));
+    AE_ALL.length=0; AE_ACTIVE.forEach(a=>AE_ALL.push(a)); AE_ALL.push('Sin asignar');
+  }
   const saved = await store.get('remax_data_v2');
   DATA = saved && saved.length ? saved : SEED;
   CONTACTED = (await store.get('remax_contacted')) || {};
@@ -597,7 +603,10 @@ function renderBrokers(ae){
   const brokers=Object.values(bMap);
   const c=AE_COL[ae]||{bg:'#F8F8F7',txt:'#555',cls:'av-s'};
   cont.innerHTML=`
-    <div style="font-size:12px;color:#888;margin-bottom:16px">${brokers.length} brokers únicos · ${rows.length} locales</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px">
+      <div style="font-size:12px;color:#888">${brokers.length} brokers únicos · ${rows.length} locales</div>
+      <button class="btn btn-sm" onclick="exportBrokersExcel('${ae}')">⬇ Descargar Excel</button>
+    </div>
     ${brokers.map(b=>{
       const ini=b.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
       const contact=[b.movil,b.email].filter(s=>s&&s.trim()&&s!='nan').join(' · ');
@@ -669,9 +678,19 @@ function renderAdmin(){
       </div>
     </div>
 
-    <div style="margin-bottom:10px">
+    <div style="margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <input type="text" id="asign-search" placeholder="Buscar oficina..." oninput="filterAsignTable()" 
-        style="padding:7px 12px;border:1px solid #E5E5E3;border-radius:6px;font-size:13px;width:260px">
+        style="padding:7px 12px;border:1px solid #E5E5E3;border-radius:6px;font-size:13px;width:220px">
+      <select id="asign-filter-ae" onchange="filterAsignTable()" style="margin:0;min-width:auto;padding:7px 12px;font-size:13px;width:140px">
+        <option value="">Todos los AE</option>
+        ${AE_ALL.map(a=>`<option value="${a}">${a}</option>`).join('')}
+      </select>
+      <select id="asign-filter-status" onchange="filterAsignTable()" style="margin:0;min-width:auto;padding:7px 12px;font-size:13px;width:130px">
+        <option value="">Todos los estados</option>
+        <option value="ONGOING">ONGOING</option>
+        <option value="WON">WON</option>
+        <option value="LOST">LOST</option>
+      </select>
     </div>
 
     <div style="overflow-x:auto;border-radius:8px;border:1px solid #E5E5E3">
@@ -688,6 +707,19 @@ function renderAdmin(){
           ${buildAsignRows()}
         </tbody>
       </table>
+    </div>
+
+    <div class="divider"></div>
+    <!-- GESTIÓN DE AEs -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="section-title">Gestión de AEs</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Añade, renombra o elimina AEs. Al renombrar se actualiza en todas las oficinas.</div>
+      </div>
+      <button class="btn btn-sm" onclick="addAE()">+ Añadir AE</button>
+    </div>
+    <div id="ae-manager-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+      ${buildAEManagerRows()}
     </div>
 
     <div class="divider"></div>
@@ -711,7 +743,7 @@ function buildAsignRows(){
     const statusColor = r.status==='ONGOING'?'#1D4ED8':r.status==='WON'?'#166534':'#991B1B';
     const statusBg = r.status==='ONGOING'?'#EFF6FF':r.status==='WON'?'#F0FDF4':'#FEF2F2';
     const isNew = r.isNew ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;border-radius:3px;padding:1px 5px;border:1px solid #FCD34D">nueva</span>' : '';
-    return `<tr id="asign-row-${i}" data-oficina="${r.oficina.toLowerCase()}">
+    return `<tr id="asign-row-${i}" data-oficina="${r.oficina.toLowerCase()}" data-ae="${r.ae.toLowerCase()}" data-status="${r.status.toLowerCase()}">
       <td style="font-weight:500">${r.oficina} ${isNew}</td>
       <td>
         <select onchange="updateAsignRow(${i},'ae',this.value)" style="margin:0;min-width:auto;padding:4px 8px;font-size:12px;width:120px">
@@ -735,6 +767,10 @@ async function updateAsignRow(idx, field, value){
   await store.set('remax_data_v2', DATA);
   updateSidebarCount();
   populateSelects();
+  // Update data attrs on the row for filtering
+  const tr = document.getElementById('asign-row-'+idx);
+  if(tr){ tr.dataset.ae=DATA[idx].ae.toLowerCase(); tr.dataset.status=DATA[idx].status.toLowerCase(); }
+  filterAsignTable();
   // Update metric counts without full re-render
   const adminContent=document.getElementById('admin-content');
   if(adminContent){
@@ -746,8 +782,13 @@ async function updateAsignRow(idx, field, value){
 
 function filterAsignTable(){
   const q=(document.getElementById('asign-search').value||'').toLowerCase();
+  const fae=(document.getElementById('asign-filter-ae')||{}).value||'';
+  const fst=(document.getElementById('asign-filter-status')||{}).value||'';
   document.querySelectorAll('#asign-tbody tr').forEach(tr=>{
-    tr.style.display=(!q||tr.dataset.oficina.includes(q))?'':'none';
+    const matchQ = !q || tr.dataset.oficina.includes(q);
+    const matchAE = !fae || tr.dataset.ae === fae.toLowerCase();
+    const matchSt = !fst || tr.dataset.status === fst.toLowerCase();
+    tr.style.display=(matchQ&&matchAE&&matchSt)?'':'none';
   });
 }
 
@@ -956,6 +997,89 @@ async function restoreSeed(){
 function exportData(){
   const blob=new Blob([JSON.stringify({data:DATA,contacted:CONTACTED},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='remax_export_'+Date.now()+'.json';a.click();
+}
+
+function buildAEManagerRows(){
+  return AE_ACTIVE.map((ae,i)=>{
+    const count = DATA.filter(r=>r.ae===ae).length;
+    const c = AE_COL[ae]||{cls:'av-s',bg:'#F8F8F7',txt:'#555'};
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border:1px solid #E5E5E3;border-radius:8px">
+      <span class="avatar ${c.cls}" style="font-size:11px">${ae[0]}</span>
+      <span style="font-weight:600;flex:1">${ae}</span>
+      <span style="font-size:12px;color:#aaa">${count} oficinas asignadas</span>
+      <button class="btn btn-sm" onclick="renameAE('${ae}')">Renombrar</button>
+      <button class="btn btn-sm" style="color:#991B1B;border-color:#FECACA" onclick="removeAE('${ae}')">Eliminar</button>
+    </div>`;
+  }).join('');
+}
+
+async function addAE(){
+  const nombre = prompt('Nombre del nuevo AE (en mayúsculas):');
+  if(!nombre||!nombre.trim()) return;
+  const n = nombre.trim().toUpperCase();
+  if(AE_ACTIVE.includes(n)||AE_ALL.includes(n)){alert('Ya existe un AE con ese nombre.');return;}
+  AE_ACTIVE.push(n);
+  AE_ALL.splice(AE_ALL.length-1,0,n); // insert before "Sin asignar"
+  AE_COL[n]={bg:'#F5F3FF',txt:'#5B21B6',cls:'av-s'};
+  await store.set('remax_ae_active', AE_ACTIVE);
+  populateSelects();
+  renderAdmin();
+  if(document.getElementById('page-ae').classList.contains('active')) renderAE();
+}
+
+async function renameAE(oldName){
+  const nuevo = prompt(`Renombrar "${oldName}" a:`, oldName);
+  if(!nuevo||!nuevo.trim()||nuevo.trim().toUpperCase()===oldName) return;
+  const n = nuevo.trim().toUpperCase();
+  if(AE_ACTIVE.includes(n)){alert('Ya existe un AE con ese nombre.');return;}
+  // Update arrays
+  const idx = AE_ACTIVE.indexOf(oldName);
+  if(idx>=0) AE_ACTIVE[idx]=n;
+  const idx2 = AE_ALL.indexOf(oldName);
+  if(idx2>=0) AE_ALL[idx2]=n;
+  if(AE_COL[oldName]){AE_COL[n]=AE_COL[oldName];delete AE_COL[oldName];}
+  // Update all DATA entries
+  DATA.forEach(r=>{ if(r.ae===oldName) r.ae=n; });
+  await store.set('remax_data_v2', DATA);
+  await store.set('remax_ae_active', AE_ACTIVE);
+  populateSelects();
+  renderAdmin();
+  if(document.getElementById('page-ae').classList.contains('active')) renderAE();
+}
+
+async function removeAE(ae){
+  const count = DATA.filter(r=>r.ae===ae).length;
+  if(!confirm(`¿Eliminar el AE "${ae}"? Sus ${count} oficinas pasarán a "Sin asignar".`)) return;
+  DATA.forEach(r=>{ if(r.ae===ae) r.ae='Sin asignar'; });
+  AE_ACTIVE.splice(AE_ACTIVE.indexOf(ae),1);
+  AE_ALL.splice(AE_ALL.indexOf(ae),1);
+  delete AE_COL[ae];
+  await store.set('remax_data_v2', DATA);
+  await store.set('remax_ae_active', AE_ACTIVE);
+  populateSelects();
+  renderAdmin();
+  if(document.getElementById('page-ae').classList.contains('active')) renderAE();
+}
+
+function exportBrokersExcel(ae){
+  const rows = DATA.filter(r=>r.ae===ae||(ae==='Sin asignar'&&r.status==='ONGOING'&&r.ae==='Sin asignar'));
+  const bMap={};
+  rows.forEach(r=>r.broker_list.forEach(b=>{
+    const k=b.email||b.nombre;
+    if(!bMap[k]){bMap[k]={...b,oficinas:[]};}
+    bMap[k].oficinas.push(r.oficina);
+  }));
+  const exportRows = Object.values(bMap).map(b=>({
+    'Nombre': b.nombre,
+    'Email': b.email||'',
+    'Móvil': b.movil||'',
+    'Oficinas': b.oficinas.join(', '),
+    'AE': ae
+  }));
+  const ws = XLSX.utils.json_to_sheet(exportRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Brokers');
+  XLSX.writeFile(wb, `brokers_${ae}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 init();
